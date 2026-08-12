@@ -1,0 +1,20 @@
+{
+  "name": "giveaway-platform",
+  "version": "0.1.0",
+  "description": "Free Web3 giveaway/quest platform — connect X & Discord, verify followers/members, random winner draw. Like Alphabot/Atlas3.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "node-fetch": "^2.7.0"
+  }
+}

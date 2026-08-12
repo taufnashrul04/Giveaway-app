@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GiveawayHub — Free Web3 Giveaway Platform</title>
+<style>
+  :root { --bg:#0b0e14; --card:#141a26; --border:#232c3d; --text:#e6ebf4; --muted:#8b95a8; --accent:#4f7cff; --accent2:#7c5cff; --green:#2ecc71; --red:#e74c3c; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  .wrap { max-width:960px; margin:0 auto; padding:24px 16px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
+  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:.15s; }
+  .btn:hover { border-color:var(--accent); transform:translateY(-1px); }
+  .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none; color:#fff; }
+  .btn.ghost { background:transparent; }
+  .btn.sm { padding:6px 12px; font-size:13px; }
+  .badge { font-size:12px; padding:3px 10px; border-radius:20px; background:var(--card); border:1px solid var(--border); color:var(--muted); }
+  .badge.green { color:var(--green); border-color:var(--green); }
+  .badge.red { color:var(--red); border-color:var(--red); }
+  .badge.accent { color:var(--accent); border-color:var(--accent); }
+  h1 { font-size:32px; line-height:1.2; margin-bottom:8px; }
+  .sub { color:var(--muted); margin-bottom:24px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-top:16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; }
+  .card h3 { font-size:17px; margin-bottom:6px; }
+  .card .meta { color:var(--muted); font-size:13px; margin-bottom:10px; }
+  .card .prize { color:var(--accent); font-weight:700; margin-bottom:10px; }
+  .tasks { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  .tasks li { margin-left:16px; margin-bottom:2px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .form { display:grid; gap:12px; margin-top:20px; }
+  .form label { font-size:13px; color:var(--muted); }
+  .form input,.form textarea,.form select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:14px; }
+  .form textarea { resize:vertical; min-height:70px; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--card); border:1px solid var(--accent); font-size:14px; z-index:99; display:none; }
+  .toast.show { display:block; }
+  .section-title { font-size:20px; font-weight:700; margin:32px 0 4px; }
+  .muted { color:var(--muted); }
+  .winner { color:var(--green); font-weight:600; }
+  details { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-top:24px; }
+  summary { cursor:pointer; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⚡ GiveawayHub</div>
+    <div class="row" id="authbar">
+      <span class="badge" id="userlabel">Not connected</span>
+      <a class="btn sm" href="/auth/x/login" id="btn-x">Connect X</a>
+      <a class="btn sm" href="/auth/dc/login" id="btn-dc">Connect Discord</a>
+      <button class="btn sm ghost" id="btn-logout" style="display:none">Logout</button>
+    </div>
+  </header>
+
+  <h1>Free Web3 Giveaway Platform</h1>
+  <p class="sub">Create giveaways, verify X followers &amp; Discord members, draw winners — free. Like Alphabot &amp; Atlas3, no fees.</p>
+
+  <details open>
+    <summary>➕ Create Giveaway (host)</summary>
+    <div class="form">
+      <div><label>Title *</label><input id="f-title" placeholder="e.g. WL Giveaway — 5 winners"></div>
+      <div><label>Description</label><textarea id="f-desc" placeholder="Prize details, rules..."></textarea></div>
+      <div><label>Prize</label><input id="f-prize" placeholder="e.g. 1 NFT whitelist + 500 USDC"></div>
+      <div class="row">
+        <div style="flex:1"><label>Winners count</label><input id="f-winners" type="number" value="1" min="1"></div>
+        <div style="flex:1"><label>Ends at (UTC, optional)</label><input id="f-ends" type="datetime-local"></div>
+      </div>
+      <div><label>Require follow X @handle (optional)</label><input id="f-xfollow" placeholder="e.g. 0xskypots"></div>
+      <div><label>Require Discord guild ID (optional)</label><input id="f-dcguild" placeholder="e.g. 123456789012345678"></div>
+      <div><button class="btn primary" id="btn-create">Create Giveaway</button></div>
+    </div>
+  </details>
+
+  <div class="section-title">Live Giveaways</div>
+  <div class="grid" id="giveaways"></div>
+  <p class="muted" id="empty" style="display:none">No giveaways yet — create the first one above.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let me = null;
+
+async function loadMe() {
+  const r = await fetch('/api/me');
+  me = await r.json();
+  const lbl = $('#userlabel');
+  if (me) {
+    const parts = [];
+    if (me.x_username) parts.push('X: @' + me.x_username);
+    if (me.dc_username) parts.push('DC: ' + me.dc_username);
+    lbl.textContent = parts.length ? parts.join(' · ') : 'Connected';
+    $('#btn-logout').style.display = 'inline-flex';
+    $('#btn-x').textContent = me.x_username ? 'X ✓' : 'Connect X';
+    $('#btn-dc').textContent = me.dc_username ? 'DC ✓' : 'Connect Discord';
+  }
+}
+
+async function loadGiveaways() {
+  const r = await fetch('/api/giveaways');
+  const list = await r.json();
+  const grid = $('#giveaways');
+  grid.innerHTML = '';
+  $('#empty').style.display = list.length ? 'none' : 'block';
+  for (const g of list) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const status = g.status === 'open' ? '<span class="badge green">OPEN</span>' : g.status === 'drawn' ? '<span class="badge accent">DRAWN</span>' : '<span class="badge red">CLOSED</span>';
+    const tasks = [];
+    if (g.require_x_follow) tasks.push('Follow @' + g.require_x_follow + ' on X');
+    if (g.require_x_repost) tasks.push('Repost the giveaway post');
+    if (g.require_dc_guild) tasks.push('Join the Discord server');
+    if (!tasks.length) tasks.push('No tasks — just enter');
+    card.innerHTML = `
+      <div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${status}</div>
+      <div class="meta">Host: @${esc(g.host||'unknown')} · ${g.entry_count} entries</div>
+      ${g.prize ? '<div class="prize">�� ' + esc(g.prize) + '</div>' : ''}
+      ${g.description ? '<p class="muted" style="margin-bottom:10px">' + esc(g.description) + '</p>' : ''}
+      <ul class="tasks">${tasks.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
+      <div class="row">
+        <button class="btn sm primary" data-enter="${g.id}">Enter</button>
+        <button class="btn sm ghost" data-view="${g.id}">View</button>
+      </div>`;
+    grid.appendChild(card);
+  }
+  // bind events
+  document.querySelectorAll('[data-enter]').forEach(b => b.onclick = () => enter(b.dataset.enter));
+  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view));
+}
+
+async function enter(id) {
+  if (!me) { toast('Connect X or Discord first'); return; }
+  const r = await fetch('/api/giveaways/' + id + '/enter', { method: 'POST' });
+  const d = await r.json();
+  if (d.error) return toast(d.error);
+  const parts = [];
+  if (d.x_follow_ok) parts.push('X follow ✓');
+  if (d.dc_ok) parts.push('Discord ✓');
+  if (d.verified) toast('✅ Entered & verified! Good luck.');
+  else toast('Entered, but tasks not all verified: ' + (parts.join(', ') || 'none') + '. Complete tasks then re-enter.');
+  loadGiveaways();
+}
+
+async function view(id) {
+  const r = await fetch('/api/giveaways/' + id);
+  const g = await r.json();
+  const w = g.winners && g.winners.length ? g.winners.map(x => (x.x_username ? '@' + x.x_username : x.dc_username)).join(', ') : 'not drawn yet';
+  toast('Winners: ' + w);
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+
+$('#btn-create').onclick = async () => {
+  if (!me) return toast('Login first (Connect X or Discord)');
+  const body = {
+    title: $('#f-title').value.trim(),
+    description: $('#f-desc').value.trim(),
+    prize: $('#f-prize').value.trim(),
+    winners_count: parseInt($('#f-winners').value) || 1,
+    ends_at: $('#f-ends').value ? new Date($('#f-ends').value).toISOString() : null,
+    require_x_follow: $('#f-xfollow').value.trim() || null,
+    require_dc_guild: $('#f-dcguild').value.trim() || null,
+  };
+  if (!body.title) return toast('Title required');
+  const r = await fetch('/api/giveaways', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (d.error) return toast(d.error);
+  toast('✅ Giveaway created!');
+  $('#f-title').value = ''; $('#f-desc').value = ''; $('#f-prize').value = ''; $('#f-xfollow').value = ''; $('#f-dcguild').value = '';
+  loadGiveaways();
+};
+
+$('#btn-logout').onclick = async () => { await fetch('/api/logout', { method: 'POST' }); location.reload(); };
+
+// connected= param toast
+if (new URLSearchParams(location.search).get('connected')) toast('✅ Account connected!');
+
+loadMe().then(loadGiveaways);
+</script>
+</body>
+</html>
