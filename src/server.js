@@ -34,7 +34,29 @@ app.use((req, res, next) => {
 
 // ---- AUTH ROUTES ----
 const x = require('../lib/x');
+const xscrape = require('../lib/xscrape');
 const discord = require('../lib/discord');
+
+// X verify provider: 'honor' (manual confirm, instant & free — user's connected X username counts as followed) |
+//                    'scrape' (our own twscrape account, free but rate-limited) |
+//                    'xapi' (paid X API via user OAuth token)
+const X_VERIFY = process.env.X_VERIFY_MODE || 'honor'; // honor|scrape|xapi
+
+async function verifyXFollow(user, targetHandle) {
+  if (X_VERIFY === 'honor') {
+    // Honor system: user connected X (we have their @username) → their follow on
+    // the host is taken on trust. Username is captured for winner export.
+    return !!(user && user.x_username);
+  }
+  if (X_VERIFY === 'scrape') {
+    // use our own scraping account to check if user follows target (free)
+    return xscrape.checkFollow(targetHandle, user.x_username);
+  }
+  if (X_VERIFY === 'xapi' && user.x_access_token) {
+    try { return await x.checkFollow(user.x_access_token, targetHandle); } catch (e) { return false; }
+  }
+  return false; // no verification possible
+}
 
 app.get('/auth/x/login', (req, res) => res.redirect(x.buildAuthorizeUrl()));
 app.get('/auth/x/callback', async (req, res) => {
@@ -169,8 +191,8 @@ app.post('/api/giveaways/:id/enter', async (req, res) => {
   let x_repost_ok = !g.require_x_repost;
   let dc_ok = !g.require_dc_guild;
 
-  if (g.require_x_follow && u.x_access_token) {
-    try { x_follow_ok = await x.checkFollow(u.x_access_token, g.require_x_follow); } catch (e) { x_follow_ok = false; }
+  if (g.require_x_follow && (u.x_username || X_VERIFY === 'xapi')) {
+    x_follow_ok = await verifyXFollow(u, g.require_x_follow);
   } else if (g.require_x_follow) { x_follow_ok = false; }
 
   if (g.require_dc_guild) dc_ok = discord.isMember(JSON.parse(u.dc_guilds || '[]'), g.require_dc_guild);
