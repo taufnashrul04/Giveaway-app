@@ -1,9 +1,12 @@
 {
-  "name": "giveaway-platform",
-  "version": "0.1.0",
-  "description": "Free Web3 giveaway/quest platform — connect X & Discord, verify followers/members, random winner draw. Like Alphabot/Atlas3.",
+  "name": "givefuel",
+  "version": "0.2.0",
+  "description": "GiveFuel — free Web3 giveaway/quest platform. Connect X & Discord, verify followers/members, random winner draw.",
   "main": "src/server.js",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
@@ -11,12 +14,14 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
-    "better-sqlite3": "^11.0.0",
     "cookie-parser": "^1.4.6",
     "ethers": "^6.17.0",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "helmet": "^7.1.0",
     "node-fetch": "^2.7.0"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.0.0"
   }
 }
