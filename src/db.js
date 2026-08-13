@@ -102,7 +102,14 @@ CREATE TABLE IF NOT EXISTS winners (
 `;
 
 async function initSchema() {
-  await db.exec(SCHEMA);
+  if (db._mode === 'turso') {
+    // libSQL execute() doesn't allow multi-statement — run one statement at a time
+    for (const stmt of SCHEMA.split(';').map(s => s.trim()).filter(Boolean)) {
+      try { await db.execute({ sql: stmt }); } catch (e) { /* ignore already-exists */ }
+    }
+  } else {
+    await db.exec(SCHEMA);
+  }
   // migration: wallet column
   try {
     const cols = await db.all('PRAGMA table_info(users)');
