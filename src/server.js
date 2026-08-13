@@ -94,6 +94,16 @@ app.get('/auth/x/login', (req, res) => res.redirect(x.buildAuthorizeUrl(res)));
 app.get('/auth/x/callback', async (req, res) => {
   try {
     const info = await x.exchangeCode(req.query.code, req.query.state, req, res);
+    // If already logged in (e.g. via Discord), LINK this X account to that user
+    // instead of switching/swapping the session identity.
+    if (req.session.userId) {
+      let existing = await db.get('SELECT * FROM users WHERE id=?', [req.session.userId]);
+      if (existing) {
+        // If this X id belongs to a DIFFERENT user, that's a conflict — keep current user, just attach X login
+        await db.run('UPDATE users SET x_user_id=?, x_username=?, x_access_token=? WHERE id=?', [info.x_user_id, info.x_username, info.x_access_token, existing.id]);
+        return res.redirect('/?connected=x');
+      }
+    }
     let u = await db.get('SELECT * FROM users WHERE x_user_id=?', [info.x_user_id]);
     if (u) {
       await db.run('UPDATE users SET x_username=?, x_access_token=? WHERE id=?', [info.x_username, info.x_access_token, u.id]);
@@ -107,6 +117,11 @@ app.get('/auth/x/callback', async (req, res) => {
 });
 app.get('/auth/x/mock', async (req, res) => {
   const info = await x.exchangeCode('testcode', 'mockstate');
+  // If already logged in, link X to current user (don't swap session)
+  if (req.session.userId) {
+    await db.run('UPDATE users SET x_user_id=?, x_username=?, x_access_token=? WHERE id=?', [info.x_user_id, info.x_username, info.x_access_token, req.session.userId]);
+    return res.redirect('/?connected=x');
+  }
   let u = await db.get('SELECT * FROM users WHERE x_user_id=?', [info.x_user_id]);
   if (u) await db.run('UPDATE users SET x_username=?, x_access_token=? WHERE id=?', [info.x_username, info.x_access_token, u.id]);
   else {
