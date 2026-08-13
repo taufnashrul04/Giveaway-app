@@ -1,4 +1,4 @@
-# GiveawayHub — Free Web3 Giveaway Platform
+# GiveFuel — Free Web3 Giveaway Platform
 
 Platform giveaway/quest Web3 gratis (kayak [Alphabot](https://alphabot.app) & [Atlas3](https://atlas3.io)).
 Users connect X (Twitter) + Discord, verify they follow a handle / join a server, enter giveaways, host draws random winners.
