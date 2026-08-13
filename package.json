@@ -1,6 +1,6 @@
 {
   "name": "givefuel",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "GiveFuel — free Web3 giveaway/quest platform. Connect X & Discord, verify followers/members, random winner draw.",
   "main": "src/server.js",
   "type": "commonjs",
@@ -13,7 +13,6 @@
     "init-db": "node scripts/init-db.js"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.4",
     "cookie-parser": "^1.4.6",
     "ethers": "^6.17.0",
     "express": "^4.19.2",
