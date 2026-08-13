@@ -51,6 +51,7 @@
       <span class="badge" id="userlabel">Not connected</span>
       <a class="btn sm" href="/auth/x/login" id="btn-x">Connect X</a>
       <a class="btn sm" href="/auth/dc/login" id="btn-dc">Connect Discord</a>
+      <a class="btn sm" href="/dashboard.html" id="btn-dash" style="display:none">Dashboard</a>
       <button class="btn sm ghost" id="btn-logout" style="display:none">Logout</button>
     </div>
   </header>
@@ -95,6 +96,7 @@ async function loadMe() {
     if (me.dc_username) parts.push('DC: ' + me.dc_username);
     lbl.textContent = parts.length ? parts.join(' · ') : 'Connected';
     $('#btn-logout').style.display = 'inline-flex';
+    $('#btn-dash').style.display = 'inline-flex';
     $('#btn-x').textContent = me.x_username ? 'X ✓' : 'Connect X';
     $('#btn-dc').textContent = me.dc_username ? 'DC ✓' : 'Connect Discord';
   }

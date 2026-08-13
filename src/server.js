@@ -101,8 +101,31 @@ app.get('/api/me', (req, res) => {
     id: u.id,
     x_username: u.x_username,
     dc_username: u.dc_username,
+    dc_user_id: u.dc_user_id,
     dc_guilds: JSON.parse(u.dc_guilds || '[]'),
+    wallet: u.wallet || '',
   } : null);
+});
+
+// Settings: update wallet address (user pastes manually — no wallet connect)
+app.post('/api/me/wallet', (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'login first' });
+  const wallet = (req.body.wallet || '').trim();
+  db.prepare('UPDATE users SET wallet=? WHERE id=?').run(wallet, req.session.userId);
+  res.json({ ok: true, wallet });
+});
+
+// Dashboard: giveaways created by me (host) + giveaways I entered (user)
+app.get('/api/dashboard', (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'login first' });
+  const mine = db.prepare(`SELECT g.*, (SELECT COUNT(*) FROM entries e WHERE e.giveaway_id=g.id) AS entry_count,
+      (SELECT COUNT(*) FROM winners w WHERE w.giveaway_id=g.id) AS winner_count
+      FROM giveaways g WHERE g.created_by=? ORDER BY g.created_at DESC`).all(req.session.userId);
+  const entered = db.prepare(`SELECT g.*, e.verified, e.created_at AS entered_at,
+      (SELECT COUNT(*) FROM entries e2 WHERE e2.giveaway_id=g.id) AS entry_count
+      FROM entries e JOIN giveaways g ON g.id=e.giveaway_id
+      WHERE e.user_id=? ORDER BY e.created_at DESC`).all(req.session.userId);
+  res.json({ mine, entered });
 });
 
 app.post('/api/logout', (req, res) => { req.session.destroy(() => res.json({ ok: true })); });
@@ -181,6 +204,21 @@ app.post('/api/giveaways/:id/draw', (req, res) => {
   for (const uid of picked) ins.run(g.id, uid);
   db.prepare("UPDATE giveaways SET status='drawn' WHERE id=?").run(g.id);
   res.json({ winners: picked });
+});
+
+// Export winners as CSV (host only) — wallet, dc id, username dc, x username
+app.get('/api/giveaways/:id/export', (req, res) => {
+  const g = db.prepare('SELECT * FROM giveaways WHERE id=?').get(req.params.id);
+  if (!g) return res.status(404).json({ error: 'not found' });
+  if (g.created_by !== req.session.userId) return res.status(403).json({ error: 'not your giveaway' });
+  const rows = db.prepare(`SELECT u.x_username, u.dc_user_id, u.dc_username, u.wallet
+    FROM winners w JOIN users u ON u.id=w.user_id WHERE w.giveaway_id=?`).all(g.id);
+  const esc = s => { const x = s == null ? '' : String(s); return (/[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x); };
+  const header = 'wallet,dc_user_id,dc_username,x_username';
+  const lines = rows.map(r => [esc(r.wallet), esc(r.dc_user_id), esc(r.dc_username), esc(r.x_username)].join(','));
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="winners_${g.id}.csv"`);
+  res.send([header, ...lines].join('\n'));
 });
 
 // ---- SERVER ----

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
   dc_username   TEXT,              -- discord username
   dc_access_token TEXT,
   dc_guilds     TEXT,              -- JSON array of {id,name,member}
+  wallet        TEXT,              -- user-pasted EVM/Tron/Solana address (for winner export)
   UNIQUE(x_user_id), UNIQUE(dc_user_id)
 );
 CREATE TABLE IF NOT EXISTS giveaways (
@@ -59,5 +60,11 @@ CREATE TABLE IF NOT EXISTS winners (
   UNIQUE(giveaway_id, user_id)
 );
 `);
+
+// Migration: add wallet column if missing (existing DBs)
+const userCols = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
+if (!userCols.includes('wallet')) {
+  db.exec("ALTER TABLE users ADD COLUMN wallet TEXT");
+}
 
 module.exports = db;
