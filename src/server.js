@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
-const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
 const path = require('path');
 const helmet = require('helmet');
 
@@ -10,18 +10,63 @@ const x = require('../lib/x');
 const xscrape = require('../lib/xscrape');
 const discord = require('../lib/discord');
 
+const SESSION_SECRET = process.env.SESSION_SECRET || 'givefuel-dev-secret';
+const SESSION_COOKIE = 'gf_session';
+const SESSION_TTL = 1000 * 60 * 60 * 24 * 7; // 7 days
+
+// ---------- Stateless signed-cookie session (serverless-safe) ----------
+// No server-side session store — user id is HMAC-signed in the cookie itself,
+// so it survives across Vercel lambda instances / cold starts.
+function signSession(uid) {
+  const payload = Buffer.from(JSON.stringify({ uid, exp: Date.now() + SESSION_TTL })).toString('base64url');
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+function verifySession(token) {
+  if (!token) return null;
+  const idx = token.lastIndexOf('.');
+  if (idx === -1) return null;
+  const payload = token.slice(0, idx);
+  const sig = token.slice(idx + 1);
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
+  if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (data.exp < Date.now()) return null;
+    return data.uid;
+  } catch (e) { return null; }
+}
+function setSessionCookie(res, uid) {
+  res.cookie(SESSION_COOKIE, signSession(uid), {
+    httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax',
+    maxAge: SESSION_TTL, path: '/',
+  });
+}
+function clearSessionCookie(res) {
+  res.clearCookie(SESSION_COOKIE, { path: '/' });
+}
+
 const app = express();
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'givefuel-dev-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
-}));
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// attach req.session (userId getter/setter backed by signed cookie)
+app.use((req, res, next) => {
+  let uid = verifySession(req.cookies[SESSION_COOKIE]);
+  req.session = {
+    get userId() { return uid; },
+    set userId(v) {
+      uid = v;           // update in-request value
+      if (v) setSessionCookie(res, v);   // persist
+    },
+    destroy(cb) { uid = null; clearSessionCookie(res); if (cb) cb(); },
+  };
+  next();
+});
+
 
 // X verify provider: honor (default) | scrape | xapi
 const X_VERIFY = process.env.X_VERIFY_MODE || 'honor';
