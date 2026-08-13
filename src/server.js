@@ -90,10 +90,10 @@ async function verifyXFollow(user, targetHandle) {
 }
 
 // ---------- AUTH ----------
-app.get('/auth/x/login', (req, res) => res.redirect(x.buildAuthorizeUrl()));
+app.get('/auth/x/login', (req, res) => res.redirect(x.buildAuthorizeUrl(res)));
 app.get('/auth/x/callback', async (req, res) => {
   try {
-    const info = await x.exchangeCode(req.query.code, req.query.state);
+    const info = await x.exchangeCode(req.query.code, req.query.state, req, res);
     let u = await db.get('SELECT * FROM users WHERE x_user_id=?', [info.x_user_id]);
     if (u) {
       await db.run('UPDATE users SET x_username=?, x_access_token=? WHERE id=?', [info.x_username, info.x_access_token, u.id]);
