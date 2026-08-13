@@ -12,8 +12,8 @@ const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN || '';
 let db;
 
 if (TURSO_URL && TURSO_AUTH_TOKEN) {
-  // ---- Turso (cloud) ----
-  const { createClient } = require('@libsql/client');
+  // ---- Turso (cloud) — use the WEB build (pure JS, works on Vercel/edge — no native binary) ----
+  const { createClient } = require('@libsql/client/web');
   db = createClient({ url: TURSO_URL, authToken: TURSO_AUTH_TOKEN });
   // libSQL client has .execute({sql, args}) — wrap into all/get/run
   db._mode = 'turso';
