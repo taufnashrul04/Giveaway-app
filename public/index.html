@@ -8,76 +8,81 @@
   :root { --bg:#0b0e14; --card:#141a26; --border:#232c3d; --text:#e6ebf4; --muted:#8b95a8; --accent:#4f7cff; --accent2:#7c5cff; --green:#2ecc71; --red:#e74c3c; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-  .wrap { max-width:960px; margin:0 auto; padding:24px 16px; }
-  header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
-  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .wrap { max-width:1000px; margin:0 auto; padding:24px 16px; }
+  header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
+  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-right:auto; }
   .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:.15s; }
   .btn:hover { border-color:var(--accent); transform:translateY(-1px); }
   .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none; color:#fff; }
+  .btn.discord { background:#5865F2; border:none; color:#fff; }
   .btn.ghost { background:transparent; }
   .btn.sm { padding:6px 12px; font-size:13px; }
   .badge { font-size:12px; padding:3px 10px; border-radius:20px; background:var(--card); border:1px solid var(--border); color:var(--muted); }
   .badge.green { color:var(--green); border-color:var(--green); }
   .badge.red { color:var(--red); border-color:var(--red); }
   .badge.accent { color:var(--accent); border-color:var(--accent); }
-  h1 { font-size:32px; line-height:1.2; margin-bottom:8px; }
-  .sub { color:var(--muted); margin-bottom:24px; }
+  .badge.purple { color:var(--accent2); border-color:var(--accent2); }
+  h1 { font-size:30px; line-height:1.2; margin-bottom:8px; }
+  .sub { color:var(--muted); margin-bottom:20px; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-top:16px; }
   .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; }
   .card h3 { font-size:17px; margin-bottom:6px; }
-  .card .meta { color:var(--muted); font-size:13px; margin-bottom:10px; }
+  .card .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
   .card .prize { color:var(--accent); font-weight:700; margin-bottom:10px; }
   .tasks { font-size:13px; color:var(--muted); margin-bottom:14px; }
   .tasks li { margin-left:16px; margin-bottom:2px; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .form { display:grid; gap:12px; margin-top:20px; }
+  .form { display:grid; gap:12px; margin-top:14px; }
   .form label { font-size:13px; color:var(--muted); }
   .form input,.form textarea,.form select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:14px; }
-  .form textarea { resize:vertical; min-height:70px; }
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--card); border:1px solid var(--accent); font-size:14px; z-index:99; display:none; }
   .toast.show { display:block; }
   .section-title { font-size:20px; font-weight:700; margin:32px 0 4px; }
   .muted { color:var(--muted); }
-  .winner { color:var(--green); font-weight:600; }
-  details { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-top:24px; }
+  .proj { display:inline-block; font-size:12px; color:var(--accent2); background:rgba(124,92,255,.12); padding:3px 10px; border-radius:20px; margin-bottom:8px; }
+  details { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin:20px 0; }
   summary { cursor:pointer; font-weight:700; }
+  .proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-top:12px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="logo">⚡ GiveFuel</div>
-    <div class="row" id="authbar">
-      <span class="badge" id="userlabel">Not connected</span>
-      <a class="btn sm" href="/auth/x/login" id="btn-x">Connect X</a>
-      <a class="btn sm" href="/auth/dc/login" id="btn-dc">Connect Discord</a>
-      <a class="btn sm" href="/dashboard.html" id="btn-dash" style="display:none">Dashboard</a>
-      <button class="btn sm ghost" id="btn-logout" style="display:none">Logout</button>
-    </div>
+    <div class="logo">⛽ GiveFuel</div>
+    <span class="badge" id="userlabel">Not connected</span>
+    <a class="btn sm discord" href="/auth/dc/login" id="btn-dc">Login with Discord</a>
+    <a class="btn sm" href="/dashboard.html" id="btn-dash" style="display:none">Dashboard</a>
+    <button class="btn sm ghost" id="btn-logout" style="display:none">Logout</button>
   </header>
 
   <h1>Free Web3 Giveaway Platform</h1>
-  <p class="sub">Create giveaways, verify X followers &amp; Discord members, draw winners — free. Like Alphabot &amp; Atlas3, no fees.</p>
+  <p class="sub">Pasukan &amp; proyek bikin giveaway, user ikut dengan connect Discord + X. 100% free. Kayak Alphabot &amp; Atlas3.</p>
 
-  <details open>
-    <summary>➕ Create Giveaway (host)</summary>
+  <!-- For teams: create project -->
+  <details>
+    <summary>🏗️ Buat Project (DAO / NFT / Komunitas) — buat team lo</summary>
     <div class="form">
-      <div><label>Title *</label><input id="f-title" placeholder="e.g. WL Giveaway — 5 winners"></div>
-      <div><label>Description</label><textarea id="f-desc" placeholder="Prize details, rules..."></textarea></div>
-      <div><label>Prize</label><input id="f-prize" placeholder="e.g. 1 NFT whitelist + 500 USDC"></div>
-      <div class="row">
-        <div style="flex:1"><label>Winners count</label><input id="f-winners" type="number" value="1" min="1"></div>
-        <div style="flex:1"><label>Ends at (UTC, optional)</label><input id="f-ends" type="datetime-local"></div>
+      <div><label>Nama Project *</label><input id="p-name" placeholder="e.g. My DAO"></div>
+      <div><label>Type</label>
+        <select id="p-type"><option value="nft">NFT</option><option value="dao">DAO</option><option value="community">Community</option></select>
       </div>
-      <div><label>Require follow X @handle (optional)</label><input id="f-xfollow" placeholder="e.g. 0xskypots"></div>
-      <div><label>Require Discord guild ID (optional)</label><input id="f-dcguild" placeholder="e.g. 123456789012345678"></div>
-      <div><button class="btn primary" id="btn-create">Create Giveaway</button></div>
+      <div><label>Deskripsi</label><textarea id="p-desc" placeholder="Apa project lo?"></textarea></div>
+      <div class="row">
+        <div style="flex:1"><label>Website (optional)</label><input id="p-web" placeholder="https://..."></div>
+        <div style="flex:1"><label>Twitter / X (optional)</label><input id="p-tw" placeholder="@handle"></div>
+      </div>
+      <div><button class="btn primary" id="btn-proj">Buat Project</button></div>
     </div>
   </details>
 
-  <div class="section-title">Live Giveaways</div>
+  <!-- Giveaway feed -->
+  <div class="section-title">🔥 Giveaway Terbaru</div>
   <div class="grid" id="giveaways"></div>
-  <p class="muted" id="empty" style="display:none">No giveaways yet — create the first one above.</p>
+  <p class="muted" id="empty" style="display:none;margin-top:16px">Belum ada giveaway — bikin project &amp; buat giveaway pertama lo!</p>
+
+  <!-- Projects feed -->
+  <div class="section-title">🏛️ Projects</div>
+  <div class="proj-grid" id="projects"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -92,15 +97,20 @@ async function loadMe() {
   const lbl = $('#userlabel');
   if (me) {
     const parts = [];
-    if (me.x_username) parts.push('X: @' + me.x_username);
     if (me.dc_username) parts.push('DC: ' + me.dc_username);
+    if (me.x_username) parts.push('@' + me.x_username);
     lbl.textContent = parts.length ? parts.join(' · ') : 'Connected';
     $('#btn-logout').style.display = 'inline-flex';
     $('#btn-dash').style.display = 'inline-flex';
-    $('#btn-x').textContent = me.x_username ? 'X ✓' : 'Connect X';
-    $('#btn-dc').textContent = me.dc_username ? 'DC ✓' : 'Connect Discord';
+    $('#btn-dc').textContent = me.dc_username ? 'DC ✓ ' + me.dc_username : 'Login with Discord';
+  } else {
+    lbl.textContent = 'Not connected';
   }
 }
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+function statusBadge(s) { return s==='open'?'<span class="badge green">OPEN</span>':s==='drawn'?'<span class="badge accent">DRAWN</span>':'<span class="badge red">CLOSED</span>'; }
 
 async function loadGiveaways() {
   const r = await fetch('/api/giveaways');
@@ -111,78 +121,83 @@ async function loadGiveaways() {
   for (const g of list) {
     const card = document.createElement('div');
     card.className = 'card';
-    const status = g.status === 'open' ? '<span class="badge green">OPEN</span>' : g.status === 'drawn' ? '<span class="badge accent">DRAWN</span>' : '<span class="badge red">CLOSED</span>';
     const tasks = [];
-    if (g.require_x_follow) tasks.push('Follow @' + g.require_x_follow + ' on X');
-    if (g.require_x_repost) tasks.push('Repost the giveaway post');
-    if (g.require_dc_guild) tasks.push('Join the Discord server');
-    if (!tasks.length) tasks.push('No tasks — just enter');
+    if (g.require_x_follow) tasks.push('Follow @' + g.require_x_follow + ' di X');
+    if (g.require_x_repost) tasks.push('Repost post giveaway');
+    if (g.require_dc_guild) tasks.push('Join Discord server');
+    if (!tasks.length) tasks.push('Tidak ada tugas — langsung masuk');
+    const projBadge = g.project_name ? `<span class="proj">${esc(g.project_name)}</span>` : '';
     card.innerHTML = `
-      <div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${status}</div>
-      <div class="meta">Host: @${esc(g.host||'unknown')} · ${g.entry_count} entries</div>
-      ${g.prize ? '<div class="prize">�� ' + esc(g.prize) + '</div>' : ''}
+      <div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${statusBadge(g.status)}</div>
+      ${projBadge}
+      <div class="meta">Host: ${esc(g.host||'?')} · ${g.entry_count} entries</div>
+      ${g.prize ? '<div class="prize">' + esc(g.prize) + '</div>' : ''}
       ${g.description ? '<p class="muted" style="margin-bottom:10px">' + esc(g.description) + '</p>' : ''}
       <ul class="tasks">${tasks.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
       <div class="row">
-        <button class="btn sm primary" data-enter="${g.id}">Enter</button>
-        <button class="btn sm ghost" data-view="${g.id}">View</button>
+        <button class="btn sm primary" data-enter="${g.id}">Ikut</button>
+        <button class="btn sm ghost" data-view="${g.id}">Lihat</button>
       </div>`;
     grid.appendChild(card);
   }
-  // bind events
   document.querySelectorAll('[data-enter]').forEach(b => b.onclick = () => enter(b.dataset.enter));
   document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view));
 }
 
+async function loadProjects() {
+  const r = await fetch('/api/projects');
+  const list = await r.json();
+  const grid = $('#projects');
+  grid.innerHTML = '';
+  if (!list.length) { grid.innerHTML = '<p class="muted">Belum ada project — buat project pertama lo di atas!</p>'; return; }
+  for (const p of list) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `
+      <div class="row" style="justify-content:space-between">
+        <h3>${esc(p.name)}</h3><span class="badge purple">${esc(p.type)}</span>
+      </div>
+      <div class="meta">${p.giveaway_count} giveaways · ${p.member_count} members</div>
+      ${p.description ? '<p class="muted" style="margin-bottom:10px">' + esc(p.description) + '</p>' : ''}
+      <a class="btn sm" data-proj="${p.id}" href="/project.html?id=${p.id}" style="pointer-events:none" onclick="event.preventDefault();location='/project.html?id=${p.id}'">Buka Project</a>`;
+    grid.appendChild(el);
+  }
+  document.querySelectorAll('[data-proj]').forEach(a => a.onclick = () => {});
+}
+
 async function enter(id) {
-  if (!me) { toast('Connect X or Discord first'); return; }
+  if (!me) { toast('Login Discord dulu'); return; }
   const r = await fetch('/api/giveaways/' + id + '/enter', { method: 'POST' });
   const d = await r.json();
   if (d.error) return toast(d.error);
-  const parts = [];
-  if (d.x_follow_ok) parts.push('X follow ✓');
-  if (d.dc_ok) parts.push('Discord ✓');
-  if (d.verified) toast('✅ Entered & verified! Good luck.');
-  else toast('Entered, but tasks not all verified: ' + (parts.join(', ') || 'none') + '. Complete tasks then re-enter.');
+  if (d.verified) toast('✅ Ikut & verified! Semoga menang.');
+  else { const p=[]; if(d.x_follow_ok)p.push('X✓'); if(d.dc_ok)p.push('DC✓'); toast('Ikut masuk, tapi tugas belum lengkap: '+(p.join(', ')||'-')); }
   loadGiveaways();
 }
 
 async function view(id) {
   const r = await fetch('/api/giveaways/' + id);
   const g = await r.json();
-  const w = g.winners && g.winners.length ? g.winners.map(x => (x.x_username ? '@' + x.x_username : x.dc_username)).join(', ') : 'not drawn yet';
-  toast('Winners: ' + w);
+  const w = g.winners && g.winners.length ? g.winners.map(x => (x.x_username ? '@'+x.x_username : x.dc_username)).join(', ') : 'belum di-draw';
+  toast('Winner: ' + w);
 }
 
-function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
-
-$('#btn-create').onclick = async () => {
-  if (!me) return toast('Login first (Connect X or Discord)');
-  const body = {
-    title: $('#f-title').value.trim(),
-    description: $('#f-desc').value.trim(),
-    prize: $('#f-prize').value.trim(),
-    winners_count: parseInt($('#f-winners').value) || 1,
-    ends_at: $('#f-ends').value ? new Date($('#f-ends').value).toISOString() : null,
-    require_x_follow: $('#f-xfollow').value.trim() || null,
-    require_dc_guild: $('#f-dcguild').value.trim() || null,
-  };
-  if (!body.title) return toast('Title required');
-  const r = await fetch('/api/giveaways', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+$('#btn-proj').onclick = async () => {
+  if (!me) return toast('Login Discord dulu');
+  const name = $('#p-name').value.trim();
+  if (!name) return toast('Nama project wajib');
+  const body = { name, type: $('#p-type').value, description: $('#p-desc').value.trim(), website: $('#p-web').value.trim(), twitter: $('#p-tw').value.trim() };
+  const r = await fetch('/api/projects', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
   const d = await r.json();
   if (d.error) return toast(d.error);
-  toast('✅ Giveaway created!');
-  $('#f-title').value = ''; $('#f-desc').value = ''; $('#f-prize').value = ''; $('#f-xfollow').value = ''; $('#f-dcguild').value = '';
-  loadGiveaways();
+  toast('✅ Project dibuat!');
+  $('#p-name').value=''; $('#p-desc').value=''; $('#p-web').value=''; $('#p-tw').value='';
+  loadProjects();
 };
 
-$('#btn-logout').onclick = async () => { await fetch('/api/logout', { method: 'POST' }); location.reload(); };
-
-// connected= param toast
-if (new URLSearchParams(location.search).get('connected')) toast('✅ Account connected!');
-
-loadMe().then(loadGiveaways);
+$('#btn-logout').onclick = async () => { await fetch('/api/logout',{method:'POST'}); location.reload(); };
+if (new URLSearchParams(location.search).get('connected')) toast('✅ Akun terhubung!');
+loadMe().then(()=>{ loadGiveaways(); loadProjects(); });
 </script>
 </body>
 </html>

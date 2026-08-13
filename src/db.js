@@ -126,6 +126,7 @@ const SCHEMA = [
 )`,
 `CREATE TABLE IF NOT EXISTS giveaways (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id    INTEGER,
   created_at    TEXT NOT NULL DEFAULT (datetime('now')),
   created_by    INTEGER NOT NULL REFERENCES users(id),
   title         TEXT NOT NULL,
@@ -156,16 +157,46 @@ const SCHEMA = [
   drawn_at     TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(giveaway_id, user_id)
 )`,
+`CREATE TABLE IF NOT EXISTS projects (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  created_by    INTEGER NOT NULL REFERENCES users(id),
+  name          TEXT NOT NULL,
+  slug          TEXT,
+  description   TEXT,
+  type          TEXT NOT NULL DEFAULT 'nft',   -- dao | nft | community
+  website       TEXT,
+  twitter       TEXT,
+  discord       TEXT,
+  logo          TEXT,
+  UNIQUE(name)
+)`,
+`CREATE TABLE IF NOT EXISTS project_members (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role         TEXT NOT NULL DEFAULT 'member',  -- owner | admin | member
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(project_id, user_id)
+)`,
 ];
 
 async function initSchema() {
   for (const stmt of SCHEMA) {
     try { await execute({ sql: stmt }); } catch (e) { /* ignore already-exists */ }
   }
+  // migration: wallet column
   try {
     const cols = await db.all('PRAGMA table_info(users)');
     if (!cols.some(c => c.name === 'wallet')) {
       await execute({ sql: 'ALTER TABLE users ADD COLUMN wallet TEXT' });
+    }
+  } catch (e) { /* ignore */ }
+  // migration: giveaways.project_id
+  try {
+    const gcols = await db.all('PRAGMA table_info(giveaways)');
+    if (!gcols.some(c => c.name === 'project_id')) {
+      await execute({ sql: 'ALTER TABLE giveaways ADD COLUMN project_id INTEGER' });
     }
   } catch (e) { /* ignore */ }
 }

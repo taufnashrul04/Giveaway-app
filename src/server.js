@@ -94,8 +94,13 @@ app.get('/auth/dc/callback', async (req, res) => {
 app.get('/auth/dc/mock', async (req, res) => {
   const info = await discord.exchangeCode('testcode');
   if (!req.session.userId) {
-    const r = await db.run('INSERT INTO users (dc_user_id, dc_username, dc_access_token, dc_guilds) VALUES (?,?,?,?)', [info.dc_user_id, info.dc_username, info.dc_access_token, JSON.stringify(info.dc_guilds)]);
-    req.session.userId = r.lastInsertRowid;
+    let u = await db.get('SELECT * FROM users WHERE dc_user_id=?', [info.dc_user_id]);
+    if (!u) {
+      const r = await db.run('INSERT INTO users (dc_user_id, dc_username, dc_access_token, dc_guilds) VALUES (?,?,?,?)', [info.dc_user_id, info.dc_username, info.dc_access_token, JSON.stringify(info.dc_guilds)]);
+      req.session.userId = r.lastInsertRowid;
+    } else {
+      req.session.userId = u.id;
+    }
   } else {
     await db.run('UPDATE users SET dc_user_id=?, dc_username=?, dc_access_token=?, dc_guilds=? WHERE id=?', [info.dc_user_id, info.dc_username, info.dc_access_token, JSON.stringify(info.dc_guilds), req.session.userId]);
   }
@@ -127,12 +132,16 @@ app.get('/api/dashboard', async (req, res) => {
       (SELECT COUNT(*) FROM entries e2 WHERE e2.giveaway_id=g.id) AS entry_count
       FROM entries e JOIN giveaways g ON g.id=e.giveaway_id
       WHERE e.user_id=? ORDER BY e.created_at DESC`, [req.session.userId]);
-  res.json({ mine, entered });
+  const myProjects = await db.all(`SELECT p.*, pm.role, (SELECT COUNT(*) FROM giveaways g WHERE g.project_id=p.id) AS giveaway_count
+      FROM projects p JOIN project_members pm ON pm.project_id=p.id
+      WHERE pm.user_id=? ORDER BY p.created_at DESC`, [req.session.userId]);
+  res.json({ mine, entered, myProjects });
 });
 
 app.get('/api/giveaways', async (req, res) => {
-  const rows = await db.all(`SELECT g.*, u.x_username AS host
-    FROM giveaways g LEFT JOIN users u ON u.id=g.created_by ORDER BY g.created_at DESC`);
+  const rows = await db.all(`SELECT g.*, u.x_username AS host, p.name AS project_name, p.slug AS project_slug, p.logo AS project_logo
+    FROM giveaways g LEFT JOIN users u ON u.id=g.created_by LEFT JOIN projects p ON p.id=g.project_id
+    ORDER BY g.created_at DESC`);
   const result = [];
   for (const r of rows) {
     const c = await db.get('SELECT COUNT(*) c FROM entries WHERE giveaway_id=?', [r.id]);
@@ -218,6 +227,60 @@ app.get('/api/giveaways/:id/export', async (req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="winners_${g.id}.csv"`);
   res.send([header, ...lines].join('\n'));
+});
+
+// ---------- PROJECTS ----------
+// List projects (+ giveaway count). Public.
+app.get('/api/projects', async (req, res) => {
+  try {
+    const rows = await db.all(`SELECT p.*, u.x_username AS owner_handle,
+      (SELECT COUNT(*) FROM giveaways g WHERE g.project_id=p.id) AS giveaway_count,
+      (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id=p.id) AS member_count
+      FROM projects p LEFT JOIN users u ON u.id=p.created_by
+      ORDER BY p.created_at DESC`);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create a project (logged-in). Creator auto-added as owner.
+app.post('/api/projects', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'login first' });
+  const { name, description, type, website, twitter, discord, logo } = req.body;
+  if (!name) return res.status(400).json({ error: 'name required' });
+  const slug = (name.toLowerCase().replace(/[^a-z0-9]+/g, '-')).replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 6);
+  const r = await db.run(`INSERT INTO projects (created_by,name,slug,description,type,website,twitter,discord,logo)
+    VALUES (?,?,?,?,?,?,?,?,?)`,
+    [req.session.userId, name, slug, description || '', type || 'nft', website || '', twitter || '', discord || '', logo || '']);
+  const pid = r.lastInsertRowid;
+  await db.run('INSERT INTO project_members (project_id,user_id,role) VALUES (?,?,?)', [pid, req.session.userId, 'owner']);
+  res.json({ id: pid, ok: true });
+});
+
+// Project detail + its giveaways + members. Public.
+app.get('/api/projects/:id', async (req, res) => {
+  const p = await db.get('SELECT * FROM projects WHERE id=?', [req.params.id]);
+  if (!p) return res.status(404).json({ error: 'not found' });
+  const giveaways = await db.all(`SELECT g.*, (SELECT COUNT(*) FROM entries e WHERE e.giveaway_id=g.id) AS entry_count
+    FROM giveaways g WHERE g.project_id=? ORDER BY g.created_at DESC`, [p.id]);
+  const members = await db.all(`SELECT pm.role, u.x_username, u.dc_username FROM project_members pm
+    JOIN users u ON u.id=pm.user_id WHERE pm.project_id=?`, [p.id]);
+  res.json({ ...p, giveaways, members });
+});
+
+// Create a project (logged-in). Creator auto-added as owner.
+app.post('/api/projects/:id/giveaways', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'login first' });
+  const p = await db.get('SELECT * FROM projects WHERE id=?', [req.params.id]);
+  if (!p) return res.status(404).json({ error: 'not found' });
+  const isMember = await db.get('SELECT * FROM project_members WHERE project_id=? AND user_id=?', [p.id, req.session.userId]);
+  if (!isMember) return res.status(403).json({ error: 'not a member of this project' });
+  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild } = req.body;
+  if (!title) return res.status(400).json({ error: 'title required' });
+  const r = await db.run(`INSERT INTO giveaways
+    (project_id,created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [p.id, req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null, require_x_follow || null, require_x_repost || null, require_dc_guild || null]);
+  res.json({ id: r.lastInsertRowid, ok: true });
 });
 
 app.post('/api/logout', (req, res) => req.session.destroy(() => res.json({ ok: true })));

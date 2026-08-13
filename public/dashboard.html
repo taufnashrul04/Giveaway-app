@@ -9,17 +9,18 @@
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
   .wrap { max-width:1000px; margin:0 auto; padding:24px 16px; }
-  header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
-  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
+  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-right:auto; }
   .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:.15s; }
   .btn:hover { border-color:var(--accent); }
   .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none; color:#fff; }
+  .btn.discord { background:#5865F2; border:none; color:#fff; }
+  .btn.black { background:#111; border:1px solid #333; color:#e7e9ea; }
   .btn.sm { padding:6px 12px; font-size:13px; }
   .badge { font-size:12px; padding:3px 10px; border-radius:20px; background:var(--card); border:1px solid var(--border); color:var(--muted); }
   .badge.green { color:var(--green); border-color:var(--green); }
-  .badge.red { color:var(--red); border-color:var(--red); }
   .badge.accent { color:var(--accent); border-color:var(--accent); }
-  .badge.gray { color:var(--muted); }
+  .badge.purple { color:var(--accent2); border-color:var(--accent2); }
   .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:16px; }
   .card h3 { font-size:17px; margin-bottom:8px; }
   .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
@@ -31,119 +32,108 @@
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--card); border:1px solid var(--accent); font-size:14px; z-index:99; display:none; }
   .toast.show { display:block; }
   .muted { color:var(--muted); }
-  a { color:var(--accent); text-decoration:none; }
-  .host-row { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+  .proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-top:12px; }
   .wlt { font-family:monospace; font-size:12px; color:var(--muted); word-break:break-all; }
+  .linkline { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <a class="logo" href="/" style="text-decoration:none">⚡ GiveFuel</a>
-    <div class="row">
-      <span class="badge" id="userlabel">Loading...</span>
-      <a class="btn sm" href="/">← Back to giveaways</a>
-    </div>
+    <a class="logo" href="/" style="text-decoration:none">⛽ GiveFuel</a>
+    <span class="badge" id="userlabel">Loading...</span>
+    <a class="btn sm" href="/">← Feed</a>
+    <button class="btn sm ghost" id="btn-logout" style="display:none">Logout</button>
   </header>
 
-  <h1>My Dashboard</h1>
-  <p class="muted" style="margin-bottom:24px">Kelola giveaway yang lo buat (host) & pantau yang lo ikutin (user).</p>
+  <h1>Account &amp; Settings</h1>
+  <p class="muted" style="margin-bottom:24px">Hubungkan akun &amp; tambah wallet. Kelola project lo.</p>
 
-  <!-- Settings -->
+  <!-- Connections -->
   <div class="card">
-    <h3>⚙️ Settings — Wallet Address</h3>
-    <p class="meta">Paste address (EVM / Tron / Solana) — dipakai waktu export pemenang.</p>
+    <h3>🔗 Akun Terhubung</h3>
+    <div class="linkline"><span>Discord</span><span id="dc-status"><span class="badge red">Belum</span></span></div>
+    <div class="linkline"><span>X / Twitter</span><span id="x-status"><span class="badge red">Belum</span><a class="btn sm black" href="/auth/x/login" style="margin-left:8px">Connect X</a></span></div>
+  </div>
+
+  <!-- Wallet -->
+  <div class="card">
+    <h3>👛 Wallet Address</h3>
+    <p class="meta">Paste alamat (EVM / Tron / Solana) — dipakai saat export pemenang.</p>
     <div class="row">
-      <input id="wallet-input" placeholder="e.g. 0x... or TP... or A1..." style="flex:1;min-width:240px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+      <input id="wallet-input" placeholder="0x... / TP... / A1..." style="flex:1;min-width:240px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
       <button class="btn primary" id="btn-wallet">Save Wallet</button>
     </div>
     <p class="wlt" id="wallet-current" style="margin-top:10px"></p>
   </div>
 
-  <!-- Host view -->
-  <div class="section-title">🎯 Giveaways I Created (Host)</div>
+  <!-- My projects -->
+  <div class="section-title">🏛️ Project Saya</div>
+  <div class="proj-grid" id="proj-list"><p class="muted">Loading...</p></div>
+
+  <!-- Giveaways I created -->
+  <div class="section-title">🎯 Giveaways Saya (Host)</div>
   <div id="host-list"><p class="muted">Loading...</p></div>
-
-  <!-- User view -->
-  <div class="section-title">🎟️ Giveaways I Entered (User)</div>
-  <div id="user-list"><p class="muted">Loading...</p></div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = s => document.querySelector(s);
 let me = null;
+function esc(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+function statusBadge(s){return s==='open'?'<span class="badge green">OPEN</span>':s==='drawn'?'<span class="badge accent">DRAWN</span>':'<span class="badge red">CLOSED</span>';}
 
-function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
-function statusBadge(s) { return s==='open'?'<span class="badge green">OPEN</span>':s==='drawn'?'<span class="badge accent">DRAWN</span>':'<span class="badge red">CLOSED</span>'; }
-
-async function loadMe() {
-  const r = await fetch('/api/me');
-  me = await r.json();
-  if (!me) { $('#userlabel').textContent = 'Not logged in'; $('#wallet-current').textContent = ''; return; }
-  $('#userlabel').textContent = (me.x_username ? '@'+me.x_username : '') + (me.dc_username ? ' · '+me.dc_username : '');
-  $('#wallet-input').value = me.wallet || '';
-  $('#wallet-current').textContent = me.wallet ? 'Current: ' + me.wallet : 'No wallet set yet';
+async function loadMe(){
+  const r=await fetch('/api/me'); me=await r.json();
+  if(!me){ $('#userlabel').textContent='Not logged in'; $('#dc-status').innerHTML='<span class="badge red">Belum — <a href="/auth/dc/login">Login Discord</a></span>'; return; }
+  $('#userlabel').textContent = (me.dc_username?'DC: '+me.dc_username:'')+(me.x_username?' · @'+me.x_username:'');
+  $('#btn-logout').style.display='inline-flex';
+  $('#dc-status').innerHTML = me.dc_username ? '<span class="badge green">'+esc(me.dc_username)+' ✓</span>' : '<span class="badge red">Belum</span>';
+  $('#x-status').innerHTML = me.x_username ? '<span class="badge green">@'+esc(me.x_username)+' ✓</span>' : '<span class="badge red">Belum</span><a class="btn sm black" href="/auth/x/login" style="margin-left:8px">Connect X</a>';
+  $('#wallet-input').value = me.wallet||'';
+  $('#wallet-current').textContent = me.wallet ? 'Current: '+me.wallet : 'Belum set wallet';
 }
 
-async function loadDashboard() {
-  const r = await fetch('/api/dashboard');
-  if (r.status === 401) { $('#host-list').innerHTML = '<p class="muted">Login dulu untuk lihat dashboard.</p>'; $('#user-list').innerHTML=''; return; }
-  const d = await r.json();
-
-  // Host list
-  $('#host-list').innerHTML = '';
-  if (!d.mine.length) $('#host-list').innerHTML = '<p class="muted">Lo belum bikin giveaway. <a href="/">Buat di sini</a></p>';
-  for (const g of d.mine) {
-    const wCount = g.winner_count;
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.innerHTML = `
-      <div class="host-row">
-        <h3>${esc(g.title)}</h3>${statusBadge(g.status)}
-      </div>
-      <div class="meta">${g.entry_count} entries · ${wCount}/${g.winners_count} winners</div>
-      <div class="row">
-        <button class="btn sm primary" data-draw="${g.id}" ${g.status!=='open'?'disabled':''}>Draw Winners</button>
-        <button class="btn sm" data-export="${g.id}" ${wCount===0?'disabled':''}>Export CSV</button>
-      </div>`;
-    el.querySelector('[data-draw]').onclick = async () => {
-      const rr = await fetch('/api/giveaways/'+g.id+'/draw', {method:'POST'});
-      const dd = await rr.json();
-      if (dd.error) return toast(dd.error);
-      toast('✅ Winners drawn: #'+dd.winners.join(', #'));
-      loadDashboard();
-    };
-    el.querySelector('[data-export]').onclick = () => window.location = '/api/giveaways/'+g.id+'/export';
+async function loadDashboard(){
+  const r=await fetch('/api/dashboard');
+  if(r.status===401){$('#proj-list').innerHTML='<p class="muted">Login dulu.</p>';return;}
+  const d=await r.json();
+  // projects
+  $('#proj-list').innerHTML='';
+  if(!d.myProjects.length){$('#proj-list').innerHTML='<p class="muted">Belum punya project. <a href="/">Buat di feed</a></p>';}
+  for(const p of d.myProjects){
+    const el=document.createElement('div');el.className='card';
+    el.innerHTML=`<div class="row" style="justify-content:space-between"><h3>${esc(p.name)}</h3><span class="badge purple">${esc(p.role)}</span></div>
+      <div class="meta">${p.giveaway_count} giveaways</div>
+      <a class="btn sm" href="/project.html?id=${p.id}">Kelola</a>`;
+    $('#proj-list').appendChild(el);
+  }
+  // host giveaways
+  $('#host-list').innerHTML='';
+  if(!d.mine.length){$('#host-list').innerHTML='<p class="muted">Belum bikin giveaway.</p>';}
+  for(const g of d.mine){
+    const el=document.createElement('div');el.className='card';
+    el.innerHTML=`<div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${statusBadge(g.status)}</div>
+      <div class="meta">${g.entry_count} entries · ${g.winner_count}/${g.winners_count} winners</div>
+      <div class="row"><button class="btn sm primary" data-draw="${g.id}" ${g.status!=='open'?'disabled':''}>Draw</button>
+      <button class="btn sm" data-export="${g.id}" ${g.winner_count===0?'disabled':''}>Export CSV</button></div>`;
     $('#host-list').appendChild(el);
-  }
-
-  // User list
-  $('#user-list').innerHTML = '';
-  if (!d.entered.length) $('#user-list').innerHTML = '<p class="muted">Lo belum ikut giveaway. <a href="/">Cek giveaway open</a></p>';
-  for (const g of d.entered) {
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.innerHTML = `
-      <h3>${esc(g.title)}</h3>
-      <div class="meta">${g.entry_count} entries · ${statusBadge(g.status)}
-        · ${g.verified?'<span class="badge green">Verified ✓</span>':'<span class="badge red">Tasks incomplete</span>'}</div>`;
-    $('#user-list').appendChild(el);
+    el.querySelector('[data-draw]').onclick=async()=>{const rr=await fetch('/api/giveaways/'+g.id+'/draw',{method:'POST'});const dd=await rr.json();if(dd.error)return toast(dd.error);toast('✅ Winners: #'+dd.winners.join(', #'));loadDashboard();};
+    el.querySelector('[data-export]').onclick=()=>location='/api/giveaways/'+g.id+'/export';
   }
 }
 
-$('#btn-wallet').onclick = async () => {
-  if (!me) return toast('Login dulu');
-  const wallet = $('#wallet-input').value.trim();
-  const r = await fetch('/api/me/wallet', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({wallet})});
-  const d = await r.json();
-  if (d.error) return toast(d.error);
-  $('#wallet-current').textContent = 'Saved: ' + d.wallet;
+$('#btn-wallet').onclick=async()=>{
+  if(!me)return toast('Login dulu');
+  const wallet=$('#wallet-input').value.trim();
+  const r=await fetch('/api/me/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet})});
+  const d=await r.json();
+  if(d.error)return toast(d.error);
+  $('#wallet-current').textContent='Saved: '+d.wallet;
   toast('✅ Wallet saved');
 };
-
+$('#btn-logout').onclick=async()=>{await fetch('/api/logout',{method:'POST'});location.reload();};
 loadMe().then(loadDashboard);
 </script>
 </body>
