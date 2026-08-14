@@ -105,7 +105,9 @@ client.on('interactionCreate', async (i) => {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setLabel('🔗 Login & Connect X & Join').setStyle(ButtonStyle.Link).setURL(`${BASE_URL}/giveaway.html?id=${id}`)
       );
-      return i.update({ content: out.message + '\n\nKlik tombol di bawah, login Discord, connect X, lalu klik **Ikut Giveaway**.', components: [row], embeds: [] });
+      // NOTE: use reply (NOT update) — update() edits the original giveaway post
+      // and destroys the embed. reply() keeps the embed intact + sends a fresh message.
+      return i.reply({ content: out.message + '\n\nKlik tombol di bawah, login Discord, connect X, lalu klik **Ikut Giveaway**.', components: [row], ephemeral: true });
     } catch (e) {
       console.error('button error:', e);
       return i.reply({ content: 'Terjadi error: ' + e.message, ephemeral: true }).catch(()=>{});
