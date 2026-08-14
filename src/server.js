@@ -320,13 +320,17 @@ app.get('/api/giveaways/:id', async (req, res) => {
 
 // Task verification status for the CURRENT user (no entry insert). Returns per-task ok + overall.
 app.get('/api/giveaways/:id/verify', async (req, res) => {
-  const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
-  if (!g) return res.status(404).json({ error: 'not found' });
-  const u = await currentUser(req);
-  const { verifyTasks } = require('../lib/tasks');
-  const tasks = getTasks(g);
-  const { results, verified } = await verifyTasks(tasks, u, X_VERIFY, xscrape, verifyCache);
-  res.json({ tasks: results, verified });
+  try {
+    const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
+    if (!g) return res.status(404).json({ error: 'not found' });
+    const u = await currentUser(req);
+    const { verifyTasks } = require('../lib/tasks');
+    const tasks = getTasks(g);
+    const { results, verified } = await verifyTasks(tasks, u, X_VERIFY, xscrape, verifyCache);
+    res.json({ tasks: results, verified });
+  } catch (e) {
+    res.status(500).json({ error: 'verify failed: ' + e.message });
+  }
 });
 
 // Participants list — HOST ONLY.
