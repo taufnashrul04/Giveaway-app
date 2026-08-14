@@ -214,22 +214,16 @@ async function render() {
     }
   }
 
-  // tasks — status tergantung login + verify
+  // tasks — list requirement (status dihitung saat klik Join, via /enter auto-check)
   const taskList = $('#task-list');
   taskList.innerHTML = '';
-  let verify = null;
-  if (ME && ME.id) verify = await api('/api/giveaways/' + GWID + '/verify');
   for (const t of (g.tasks || [])) {
     const li = document.createElement('li');
-    const r = verify ? (verify.tasks.find(x => x.type === t.type) || {}) : {};
-    const ok = r.ok;
-    const dot = document.createElement('div');
-    dot.className = 'dot ' + (ok === undefined ? 'wait' : ok ? 'ok' : 'no');
-    dot.textContent = ok === undefined ? '·' : ok ? '✓' : '✕';
+    const dot = document.createElement('div'); dot.className = 'dot wait'; dot.textContent = '•';
     const tb = document.createElement('span'); tb.className = 'task-title'; tb.textContent = taskLabel(t);
     li.appendChild(dot); li.appendChild(tb);
-    // link aksi ke X kalau belum selesai (follow/like/repost)
-    if (ok === false && ['follow_x','like_x','repost_x'].includes(t.type)) {
+    // link aksi ke X utk task follow/like/repost
+    if (['follow_x','like_x','repost_x'].includes(t.type)) {
       const a = document.createElement('a');
       a.className = 'btn-sm btn ghost'; a.style.cssText = 'margin-left:auto;white-space:nowrap';
       a.href = xActionUrl(t); a.target = '_blank'; a.rel = 'noopener';
@@ -241,20 +235,25 @@ async function render() {
 
   // connected note
   const cn = $('#connected-note');
-  if (!ME || !ME.id) cn.textContent = 'Login untuk melihat status task & ikut giveaway.';
-  else if (verify && verify.verified) cn.textContent = '✅ Semua task terpenuhi! Klik Ikut Giveaway.';
-  else cn.textContent = 'Selesaikan task di atas untuk bisa ikut. Connect X di dashboard kalau belum.';
+  if (!ME || !ME.id) cn.textContent = 'Login untuk bisa ikut giveaway.';
+  else cn.textContent = 'Klik "Ikut Giveaway" — sistem auto-check task, kalau semua selesai langsung masuk.';
 
-  // action button — login / connect X / join sesuai state
+  // action button — login / join (auto-check ada di /enter)
   const needX = (g.tasks || []).some(t => ['follow_x','like_x','repost_x','connect_x'].includes(t.type));
   const btn = $('#btn-join');
   btn.disabled = !(ME && ME.id) || g.status !== 'open';
-  btn.textContent = g.status !== 'open' ? 'Giveaway ditutup' : (verify && verify.verified ? 'Ikut Giveaway' : 'Selesaikan task');
+  btn.textContent = g.status !== 'open' ? 'Giveaway ditutup' : 'Ikut Giveaway';
   btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = 'Memeriksa...';
     const r = await api('/api/giveaways/' + GWID + '/enter', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
-    if (r.entered) alert(r.verified ? '✅ Kamu masuk giveaway! Semoga menang 🍀' : '⚠️ Masih ada task belum selesai.');
-    else alert(r.error || 'Gagal join');
-    render();
+    btn.disabled = false; btn.textContent = 'Ikut Giveaway';
+    if (r.entered) {
+      if (r.verified) alert('✅ Kamu masuk giveaway! Semoga menang 🍀');
+      else {
+        const belum = (r.tasks || []).filter(t => !t.ok).map(t => '• ' + taskLabel(t)).join('\n');
+        alert('⚠️ Belum semua task selesai:\n' + (belum || 'tidak ada task') + '\n\nSelesaikan di X lalu klik Ikut lagi (auto re-verify).');
+      }
+    } else alert(r.error || 'Gagal join');
   };
   renderAction(needX);
 
