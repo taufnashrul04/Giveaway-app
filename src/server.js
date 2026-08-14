@@ -219,12 +219,19 @@ app.get('/api/giveaways/:id', async (req, res) => {
 
 app.post('/api/giveaways', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'login first' });
-  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild } = req.body;
+  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild, tasks } = req.body;
   if (!title) return res.status(400).json({ error: 'title required' });
+  // normalize tasks array; also derive legacy columns from tasks for compatibility
+  const taskList = Array.isArray(tasks) && tasks.length ? tasks : [];
+  const tasksJson = JSON.stringify(taskList);
+  // derive legacy fields if not explicitly given
+  const xFollow = require_x_follow || (taskList.find(t => t.type === 'follow_x') || {}).target || null;
+  const dcg = require_dc_guild || (taskList.find(t => t.type === 'join_dc') || {}).target || null;
   const r = await db.run(`INSERT INTO giveaways
-    (created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild)
-    VALUES (?,?,?,?,?,?,?,?,?)`,
-    [req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null, require_x_follow || null, require_x_repost || null, require_dc_guild || null]);
+    (created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild,tasks)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null,
+      xFollow, require_x_repost || null, dcg, tasksJson]);
   res.json({ id: r.lastInsertRowid, ok: true });
 });
 
@@ -235,24 +242,30 @@ app.post('/api/giveaways/:id/enter', async (req, res) => {
   if (g.status !== 'open') return res.status(400).json({ error: 'giveaway closed' });
   const u = await currentUser(req);
 
-  let x_follow_ok = !g.require_x_follow;
-  let x_repost_ok = !g.require_x_repost;
-  let dc_ok = !g.require_dc_guild;
+  // Dynamic task system (kayak Alphabot/Atlas): parse tasks JSON; fallback to legacy columns
+  let taskList = [];
+  try { taskList = JSON.parse(g.tasks || '[]'); } catch (e) { taskList = []; }
+  if (!taskList.length) {
+    // legacy: build from old columns
+    if (g.require_x_follow) taskList.push({ type: 'follow_x', target: g.require_x_follow });
+    if (g.require_x_repost) taskList.push({ type: 'repost_x', target: g.require_x_repost });
+    if (g.require_dc_guild) taskList.push({ type: 'join_dc', target: g.require_dc_guild });
+  }
 
-  if (g.require_x_follow && (u.x_username || X_VERIFY === 'xapi')) {
-    x_follow_ok = await verifyXFollow(u, g.require_x_follow);
-  } else if (g.require_x_follow) { x_follow_ok = false; }
+  const { verifyTasks } = require('../lib/tasks');
+  const { results, verified } = await verifyTasks(taskList, u, X_VERIFY, xscrape);
 
-  if (g.require_dc_guild) dc_ok = discord.isMember(JSON.parse(u.dc_guilds || '[]'), g.require_dc_guild);
+  const x_follow_ok = (results.find(t => t.type === 'follow_x') || {}).ok ?? !g.require_x_follow;
+  const x_repost_ok = (results.find(t => t.type === 'repost_x') || {}).ok ?? !g.require_x_repost;
+  const dc_ok = (results.find(t => t.type === 'join_dc') || {}).ok ?? !g.require_dc_guild;
 
-  const verified = (x_follow_ok && x_repost_ok && dc_ok) ? 1 : 0;
   await db.run(`INSERT INTO entries (giveaway_id,user_id,x_follow_ok,x_repost_ok,dc_ok,verified)
              VALUES (?,?,?,?,?,?)
              ON CONFLICT(giveaway_id,user_id) DO UPDATE SET
                x_follow_ok=excluded.x_follow_ok,x_repost_ok=excluded.x_repost_ok,
                dc_ok=excluded.dc_ok,verified=excluded.verified`,
-    [g.id, req.session.userId, x_follow_ok ? 1 : 0, x_repost_ok ? 1 : 0, dc_ok ? 1 : 0, verified]);
-  res.json({ entered: true, verified, x_follow_ok, x_repost_ok, dc_ok });
+    [g.id, req.session.userId, x_follow_ok ? 1 : 0, x_repost_ok ? 1 : 0, dc_ok ? 1 : 0, verified ? 1 : 0]);
+  res.json({ entered: true, verified, x_follow_ok, x_repost_ok, dc_ok, tasks: results });
 });
 
 app.post('/api/giveaways/:id/draw', async (req, res) => {
@@ -272,6 +285,17 @@ app.post('/api/giveaways/:id/draw', async (req, res) => {
   const ins = 'INSERT OR IGNORE INTO winners (giveaway_id,user_id) VALUES (?,?)';
   for (const uid of picked) await db.run(ins, [g.id, uid]);
   await db.run("UPDATE giveaways SET status='drawn' WHERE id=?", [g.id]);
+  // notify Discord bot to announce winners (best-effort)
+  const botUrl = process.env.GIVEFUEL_BOT_URL || '';
+  const announceSecret = process.env.DC_ANNOUNCE_SECRET || '';
+  if (botUrl && announceSecret) {
+    const winRows = await db.all(`SELECT u.dc_user_id, u.dc_username, u.x_username FROM winners w JOIN users u ON u.id=w.user_id WHERE w.giveaway_id=?`, [g.id]);
+    fetch(`${botUrl}/announce`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-announce-secret': announceSecret },
+      body: JSON.stringify({ giveawayId: g.id, title: g.title, prize: g.prize, winners: winRows }),
+    }).catch(e => console.error('[announce] failed:', e.message));
+  }
   res.json({ winners: picked });
 });
 
@@ -334,12 +358,17 @@ app.post('/api/projects/:id/giveaways', async (req, res) => {
   if (!p) return res.status(404).json({ error: 'not found' });
   const isMember = await db.get('SELECT * FROM project_members WHERE project_id=? AND user_id=?', [p.id, req.session.userId]);
   if (!isMember) return res.status(403).json({ error: 'not a member of this project' });
-  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild } = req.body;
+  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild, tasks } = req.body;
   if (!title) return res.status(400).json({ error: 'title required' });
+  const taskList = Array.isArray(tasks) && tasks.length ? tasks : [];
+  const tasksJson = JSON.stringify(taskList);
+  const xFollow = require_x_follow || (taskList.find(t => t.type === 'follow_x') || {}).target || null;
+  const dcg = require_dc_guild || (taskList.find(t => t.type === 'join_dc') || {}).target || null;
   const r = await db.run(`INSERT INTO giveaways
-    (project_id,created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild)
-    VALUES (?,?,?,?,?,?,?,?,?,?)`,
-    [p.id, req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null, require_x_follow || null, require_x_repost || null, require_dc_guild || null]);
+    (project_id,created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild,tasks)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [p.id, req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null,
+      xFollow, require_x_repost || null, dcg, tasksJson]);
   res.json({ id: r.lastInsertRowid, ok: true });
 });
 

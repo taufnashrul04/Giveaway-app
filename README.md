@@ -105,8 +105,33 @@ turso db tokens create givefuel # → auth token
 5. Copas **Client ID** + **Client Secret** → env `X_CLIENT_ID` / `X_CLIENT_SECRET`
 > Catatan: connect X (login user) itu GRATIS. Yang berbayar cuma kalau mau verify follower real via API (X_VERIFY_MODE=xapi ~$100/mo). Pakai `honor` = free.
 
+## Setup Discord Bot (slash /join + announce winner)
+Run as a separate long-lived process (NOT on Vercel — needs persistent WebSocket connection).
+
+```bash
+# 1. Discord Developer Portal → aplikasi "GiveFuel" → Bot tab → Build-A-Bot → copy TOKEN
+# 2. Invite: OAuth2 → URL Generator → scope "applications.commands" + "bot"
+#    + permissions: Send Messages, Embed Links, Use Slash Commands, Read Message History
+# 3. Env (lihat .env.bot.example):
+#    DC_BOT_TOKEN=...   GIVEFUEL_BASE_URL=https://givefuel.vercel.app
+#    TURSO_URL=...      TURSO_AUTH_TOKEN=...
+#    DC_ANNOUNCE_SECRET=...   GIVEFUEL_ANNOUNCE_PORT=4210
+# 4. Jalankan:  node bot/discord-bot.js   (background/tmux)
+```
+Slash commands:
+- `/giveaways` — list giveaway open
+- `/join <id>` — ikut giveaway dari Discord (auto-verify; join_dc task = otomatis ok karena user di server)
+- `/status` — cek akun lo terhubung ke GiveFuel
+- `/announce <id>` — set channel ini jadi tempat announce winner
+
+Wire ke web server (Vercel) — env vars tambahan di server:
+```
+GIVEFUEL_BOT_URL=http://<bot-host>:4210
+DC_ANNOUNCE_SECRET=...   # sama seperti bot
+```
+Saat host `/draw`, server otomatis POST `/announce` ke bot → bot kirim embed winner ke channel Discord.
+
 ## Roadmap
-- [ ] Repost task verification (X API `retweeted` check)
-- [ ] Wallet connect (EVM/Solana) — airdrop claim flow
+- [ ] `require_x_repost` real verify via X API (paid) — saat ini honor
 - [ ] Email/jumlah entri per user, referral
-- [ ] Auto-DM pemenang via X DM / Discord
+- [ ] Auto-close giveaways (cron) berdasarkan ends_at

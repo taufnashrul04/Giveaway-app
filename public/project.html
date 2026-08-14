@@ -57,9 +57,12 @@
       <div><label>Hadiah / Prize</label><input id="g-prize" placeholder="e.g. 1 NFT WL + 500 USDC"></div>
       <div class="row">
         <div style="flex:1"><label>Jumlah pemenang</label><input id="g-winners" type="number" value="1" min="1"></div>
-        <div style="flex:1"><label>Wajib follow X @handle</label><input id="g-xfollow" placeholder="e.g. 0xskypots"></div>
       </div>
-      <div><label>Wajib join Discord (guild id, optional)</label><input id="g-dcguild" placeholder="e.g. 123456789012345678"></div>
+      <div style="border:1px solid var(--border);border-radius:10px;padding:10px">
+        <label style="margin-bottom:6px;display:block"><strong>➕ Task (wajib dipenuhi user)</strong> — samakan kayak Alphabot/Atlas</label>
+        <div id="g-tasks"></div>
+        <button type="button" class="btn sm" id="btn-addtask" style="margin-top:8px">+ Tambah Task</button>
+      </div>
       <div><button class="btn primary" id="btn-create">Buat Giveaway</button></div>
     </div>
   </details>
@@ -101,16 +104,31 @@ async function loadProject(){
   list.innerHTML='';
   if(!p.giveaways.length) list.innerHTML='<p class="muted">Belum ada giveaway di project ini.</p>';
   for(const g of p.giveaways){
-    const tasks=[];
-    if(g.require_x_follow)tasks.push('Follow @'+g.require_x_follow+' di X');
-    if(g.require_dc_guild)tasks.push('Join Discord');
-    if(!tasks.length)tasks.push('Tidak ada tugas');
+    let tasks=[];
+    try{ tasks=JSON.parse(g.tasks||'[]'); }catch(e){}
+    if(!tasks.length){
+      if(g.require_x_follow)tasks.push({type:'follow_x',target:g.require_x_follow});
+      if(g.require_x_repost)tasks.push({type:'repost_x',target:g.require_x_repost});
+      if(g.require_dc_guild)tasks.push({type:'join_dc',target:g.require_dc_guild});
+    }
+    const taskLabels=tasks.map(t=>{
+      switch(t.type){
+        case 'follow_x':return 'Follow @'+(t.target||'').replace(/^@/,'')+' di X';
+        case 'like_x':return 'Like postingan X';
+        case 'repost_x':return 'Repost postingan X';
+        case 'join_dc':return 'Join Discord server';
+        case 'connect_x':return 'Connect akun X';
+        case 'connect_dc':return 'Connect akun Discord';
+        default:return t.label||'Task';
+      }
+    });
+    if(!taskLabels.length)taskLabels.push('Tidak ada tugas');
     const el=document.createElement('div'); el.className='card';
     el.innerHTML=`
       <div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${statusBadge(g.status)}</div>
       <div class="meta">${g.entry_count} entries</div>
       ${g.prize?'<div style="color:var(--accent);font-weight:700;margin-bottom:8px">'+esc(g.prize)+'</div>':''}
-      <ul class="tasks">${tasks.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
+      <ul class="tasks">${taskLabels.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
       <div class="row"><button class="btn sm primary" data-enter="${g.id}">Ikut</button></div>`;
     list.appendChild(el);
     el.querySelector('[data-enter]').onclick=()=>enter(g.id);
@@ -135,17 +153,62 @@ $('#btn-create').onclick=async()=>{
   if(!me) return toast('Login dulu');
   const title=$('#g-title').value.trim();
   if(!title) return toast('Judul wajib');
+  // collect tasks
+  const tasks=[];
+  document.querySelectorAll('.task-row').forEach(row=>{
+    const type=row.querySelector('.task-type').value;
+    const target=row.querySelector('.task-target').value.trim();
+    if(type==='connect_x'||type==='connect_dc'){
+      if($('#t-'+type).checked) tasks.push({type});
+      return;
+    }
+    if(!target) return;
+    tasks.push({type, target});
+  });
   const body={ title, description:$('#g-desc').value.trim(), prize:$('#g-prize').value.trim(),
-    winners_count:parseInt($('#g-winners').value)||1,
-    require_x_follow:$('#g-xfollow').value.trim()||null,
-    require_dc_guild:$('#g-dcguild').value.trim()||null };
+    winners_count:parseInt($('#g-winners').value)||1, tasks };
   const r=await fetch('/api/projects/'+PROJECT_ID+'/giveaways',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(d.error) return toast(d.error);
   toast('✅ Giveaway dibuat!');
-  $('#g-title').value='';$('#g-desc').value='';$('#g-prize').value='';$('#g-xfollow').value='';$('#g-dcguild').value='';
+  $('#g-title').value='';$('#g-desc').value='';$('#g-prize').value='';
+  $('#g-tasks').innerHTML='';
   loadProject();
 };
+
+// ---- Dynamic task builder ----
+const TASK_TYPES=[
+  {value:'follow_x',label:'Follow X @',placeholder:'@handle'},
+  {value:'like_x',label:'Like post X',placeholder:'https://x.com/.../status/ID'},
+  {value:'repost_x',label:'Repost post X',placeholder:'https://x.com/.../status/ID'},
+  {value:'join_dc',label:'Join Discord (guild id)',placeholder:'123456789012345678'},
+  {value:'connect_x',label:'Connect akun X (tidak perlu target)',placeholder:'',toggle:true},
+  {value:'connect_dc',label:'Connect akun Discord (tidak perlu target)',placeholder:'',toggle:true},
+];
+function addTaskRow(prefill){
+  const wrap=document.createElement('div');
+  wrap.className='task-row';
+  wrap.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:6px';
+  wrap.innerHTML=`<select class="task-type" style="width:220px">${TASK_TYPES.map(t=>`<option value="${t.value}">${t.label}</option>`).join('')}</select>
+    <input class="task-target" style="flex:1" placeholder="target/URL">
+    <button type="button" class="btn sm ghost task-del">✕</button>`;
+  if(prefill){ wrap.querySelector('.task-type').value=prefill.type; wrap.querySelector('.task-target').value=prefill.target||''; }
+  // checkbox tasks (connect_x/dc) — replace target input with checkbox
+  const updateInput=()=>{
+    const t=wrap.querySelector('.task-type').value;
+    const ttype=TASK_TYPES.find(x=>x.value===t);
+    if(ttype&&ttype.toggle){
+      wrap.querySelector('.task-target').outerHTML='<input type="checkbox" class="task-target" id="t-'+t+'" checked title="wajib">';
+    } else if(wrap.querySelector('.task-target').type==='checkbox'){
+      wrap.querySelector('.task-target').outerHTML='<input class="task-target" style="flex:1" placeholder="target/URL">';
+    }
+  };
+  wrap.querySelector('.task-type').onchange=updateInput;
+  wrap.querySelector('.task-del').onclick=()=>wrap.remove();
+  updateInput();
+  $('#g-tasks').appendChild(wrap);
+}
+$('#btn-addtask').onclick=()=>addTaskRow();
 
 loadMe().then(loadProject);
 </script>

@@ -137,7 +137,8 @@ const SCHEMA = [
   status        TEXT NOT NULL DEFAULT 'open',
   require_x_follow TEXT,
   require_x_repost TEXT,
-  require_dc_guild TEXT
+  require_dc_guild TEXT,
+  tasks         TEXT
 )`,
 `CREATE TABLE IF NOT EXISTS entries (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -197,6 +198,13 @@ async function initSchema() {
     const gcols = await db.all('PRAGMA table_info(giveaways)');
     if (!gcols.some(c => c.name === 'project_id')) {
       await execute({ sql: 'ALTER TABLE giveaways ADD COLUMN project_id INTEGER' });
+    }
+  } catch (e) { /* ignore */ }
+  // migration: giveaways.tasks (JSON)
+  try {
+    const gcols2 = await db.all('PRAGMA table_info(giveaways)');
+    if (!gcols2.some(c => c.name === 'tasks')) {
+      await execute({ sql: 'ALTER TABLE giveaways ADD COLUMN tasks TEXT' });
     }
   } catch (e) { /* ignore */ }
 }

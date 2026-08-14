@@ -121,11 +121,25 @@ async function loadGiveaways() {
   for (const g of list) {
     const card = document.createElement('div');
     card.className = 'card';
-    const tasks = [];
-    if (g.require_x_follow) tasks.push('Follow @' + g.require_x_follow + ' di X');
-    if (g.require_x_repost) tasks.push('Repost post giveaway');
-    if (g.require_dc_guild) tasks.push('Join Discord server');
-    if (!tasks.length) tasks.push('Tidak ada tugas — langsung masuk');
+    let tasks=[];
+    try{ tasks=JSON.parse(g.tasks||'[]'); }catch(e){}
+    if(!tasks.length){
+      if (g.require_x_follow) tasks.push({type:'follow_x',target:g.require_x_follow});
+      if (g.require_x_repost) tasks.push({type:'repost_x',target:g.require_x_repost});
+      if (g.require_dc_guild) tasks.push({type:'join_dc',target:g.require_dc_guild});
+    }
+    const taskLabels=tasks.map(t=>{
+      switch(t.type){
+        case 'follow_x':return 'Follow @'+(t.target||'').replace(/^@/,'')+' di X';
+        case 'like_x':return 'Like postingan X';
+        case 'repost_x':return 'Repost postingan X';
+        case 'join_dc':return 'Join Discord server';
+        case 'connect_x':return 'Connect akun X';
+        case 'connect_dc':return 'Connect akun Discord';
+        default:return t.label||'Task';
+      }
+    });
+    if(!taskLabels.length) taskLabels.push('Tidak ada tugas — langsung masuk');
     const projBadge = g.project_name ? `<span class="proj">${esc(g.project_name)}</span>` : '';
     card.innerHTML = `
       <div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${statusBadge(g.status)}</div>
@@ -133,7 +147,7 @@ async function loadGiveaways() {
       <div class="meta">Host: ${esc(g.host||'?')} · ${g.entry_count} entries</div>
       ${g.prize ? '<div class="prize">' + esc(g.prize) + '</div>' : ''}
       ${g.description ? '<p class="muted" style="margin-bottom:10px">' + esc(g.description) + '</p>' : ''}
-      <ul class="tasks">${tasks.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
+      <ul class="tasks">${taskLabels.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
       <div class="row">
         <button class="btn sm primary" data-enter="${g.id}">Ikut</button>
         <button class="btn sm ghost" data-view="${g.id}">Lihat</button>
