@@ -129,7 +129,15 @@ Wire ke web server (Vercel) — env vars tambahan di server:
 GIVEFUEL_BOT_URL=http://<bot-host>:4210
 DC_ANNOUNCE_SECRET=...   # sama seperti bot
 ```
-Saat host `/draw`, server otomatis POST `/announce` ke bot → bot kirim embed winner ke channel Discord.
+
+## Flow Giveaway → Discord (otomatis)
+1. Host bikin giveaway di **website** (public/project.html atau feed)
+2. Web server otomatis POST `/giveaway` ke bot (GIVEFUEL_BOT_URL)
+3. Bot post **embed announce + tombol "🎟️ Join Giveaway"** ke channel Discord
+4. User klik tombol → buka `https://givefuel.vercel.app/?giveaway=<id>` → auto-scroll & highlight giveaway → klik **Ikut** di web (verify task)
+5. Saat host **draw** di web → server POST `/announce` → bot kirim **embed winner** ke channel
+
+Roles: bot punya `/giveaways`, `/join`, `/status`, `/announce <id>` (set channel announce per giveaway). `/announce <id>` juga bisa dipakai utk pilih channel mana yang jadi tempat announce giveaway #id.
 
 ## Roadmap
 - [ ] `require_x_repost` real verify via X API (paid) — saat ini honor
