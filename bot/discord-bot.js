@@ -182,8 +182,30 @@ async function processJoin(dcUserId, dcUsername, giveawayId) {
     if (t.type === 'connect_dc') { results.push({ ...t, ok: true }); continue; }
     if (t.type === 'join_dc') { results.push({ ...t, ok: true }); continue; } // user IS here in the server
     if (t.type === 'connect_x') { results.push({ ...t, ok: !!(u.x_username) }); continue; }
+    // X-related tasks: real verify via remote verifier (box twitter-cli) when configured
     if (t.type === 'follow_x' || t.type === 'like_x' || t.type === 'repost_x') {
-      results.push({ ...t, ok: !!(u.x_username) }); // honor system
+      const VERIFY_URL = process.env.X_VERIFIER_URL || '';
+      const VERIFY_SECRET = process.env.VERIFY_SECRET || '';
+      let realv = null;
+      if (VERIFY_URL && u.x_username && (t.type === 'follow_x' || t.type === 'repost_x')) {
+        const target = (t.type === 'follow_x')
+          ? (String(t.target).match(/x\.com\/([A-Za-z0-9_]+)/i) || [])[1] || String(t.target).replace(/^@/,'').replace(/[^A-Za-z0-9_]/g,'')
+          : (String(t.target).match(/status\/(\d+)/) || String(t.target).match(/\/i\/status\/(\d+)/) || String(t.target).match(/^(\d{10,25})$/) || [])[1] || '';
+        if (target) {
+          try {
+            const rr = await fetch(`${VERIFY_URL}/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-verify-secret': VERIFY_SECRET },
+              body: JSON.stringify({ type: t.type === 'repost_x' ? 'repost_x' : 'follow_x', userHandle: u.x_username, target }),
+            });
+            const dd = await rr.json();
+            if (typeof dd.ok === 'boolean') realv = dd.ok;
+          } catch (e) { realv = null; }
+        }
+      }
+      // realv null = gagal/ga bisa → fallback honor
+      const ok = (realv !== null) ? realv : !!(u.x_username);
+      results.push({ ...t, ok });
       continue;
     }
     results.push({ ...t, ok: false });
