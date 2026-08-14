@@ -101,11 +101,11 @@ client.on('interactionCreate', async (i) => {
       if (out.ok === true) {
         return i.reply({ content: out.message, ephemeral: true });
       }
-      // incomplete → selesaikan task via web (butuh connect X). Kasih link tombol.
+      // incomplete → bawa ke web utk login + connect X + join.
       const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setLabel('🍀 Lanjut Join di Web').setStyle(ButtonStyle.Link).setURL(`${BASE_URL}/?giveaway=${id}`)
+        new ButtonBuilder().setLabel('🔗 Login & Connect X & Join').setStyle(ButtonStyle.Link).setURL(`${BASE_URL}/giveaway.html?id=${id}`)
       );
-      return i.update({ content: out.message, components: [row], embeds: [] });
+      return i.update({ content: out.message + '\n\nKlik tombol di bawah, login Discord, connect X, lalu klik **Ikut Giveaway**.', components: [row], embeds: [] });
     } catch (e) {
       console.error('button error:', e);
       return i.reply({ content: 'Terjadi error: ' + e.message, ephemeral: true }).catch(()=>{});
@@ -187,8 +187,10 @@ async function processJoin(dcUserId, dcUsername, giveawayId) {
   if (verified) {
     return { ok: true, message: `✅ Lo masuk giveaway **#${g.id} — ${g.title}**! Semua task terpenuhi. Semoga menang 🍀` };
   } else {
-    const pending = results.filter(r => !r.ok).map(r => '  ❌ ' + taskLabel(r)).join('\n');
-    return { ok: false, message: `⚠️ Task belum lengkap buat **#${g.id} — ${g.title}**:\n${pending}\n\nKlik tombol selesaikan di web (ebutuh connect X) atau hubungkan X di ${BASE_URL}/dashboard.` };
+    const pending = results.filter(r => !r.ok).map(r => r.type === 'connect_x' || r.type === 'follow_x' || r.type === 'like_x' || r.type === 'repost_x'
+      ? '  ❌ ' + taskLabel(r) + ' (butuh connect akun X)'
+      : '  ❌ ' + taskLabel(r)).join('\n');
+    return { ok: false, message: `⚠️ Task belum lengkap buat **#${g.id} — ${g.title}**:\n${pending}\n\nKlik tombol **Login & Connect X & Join** di bawah untuk lanjut via web.` };
   }
 }
 

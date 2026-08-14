@@ -55,6 +55,7 @@
   <a class="brand" href="/">GiveFuel</a>
   <div class="right">
     <span id="userlabel" class="chk"></span>
+    <a href="/auth/dc/login" id="btn-login-header" style="background:var(--accent);color:#fff;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px">Login Discord</a>
   </div>
 </div>
 <div class="wrap">
@@ -89,7 +90,7 @@
       <div class="chk" style="margin-bottom:8px">Merah = belum selesai · Hijau = selesai</div>
       <ul class="tasks" id="task-list"></ul>
       <div id="connected-note" class="note"></div>
-      <div style="margin-top:14px">
+      <div id="action-area" style="margin-top:14px">
         <button class="btn primary" id="btn-join">Ikut Giveaway</button>
       </div>
     </div>
@@ -128,7 +129,32 @@ function taskLabel(t) {
 async function loadMe() {
   const d = await api('/api/me');
   ME = d;
-  $('#userlabel').textContent = d.id ? ('👤 ' + (d.dc_username || d.x_username || 'user')) : '';
+  const loginBtn = $('#btn-login-header');
+  const redirectPath = '/giveaway.html?id=' + GWID;
+  if (d.id) {
+    loginBtn.style.display = 'none';
+    $('#userlabel').textContent = '👤 ' + (d.dc_username || d.x_username || 'user');
+  } else {
+    loginBtn.style.display = 'inline-block';
+  }
+  // header login + tombol join bawa redirect biar balik ke halaman ini
+  loginBtn.href = '/auth/dc/login?redirect=' + encodeURIComponent(redirectPath);
+}
+
+function renderAction(needX) {
+  const area = $('#action-area');
+  const btn = $('#btn-join');
+  area.innerHTML = '';
+  if (!ME || !ME.id) {
+    area.innerHTML = `<a class="btn primary" href="/auth/dc/login?redirect=${encodeURIComponent('/giveaway.html?id='+GWID)}">🔐 Login Discord dulu</a>`;
+    return;
+  }
+  if (needX && !ME.x_username) {
+    area.innerHTML = `<a class="btn primary" href="/auth/x/login?redirect=${encodeURIComponent('/giveaway.html?id='+GWID)}">🐦 Connect X dulu</a>
+      <div class="note" style="margin-top:8px">Task X butuh akun X ke-link. Setelah connect, otomatis balik ke sini.</div>`;
+    return;
+  }
+  area.appendChild(btn);
 }
 
 async function render() {
@@ -185,16 +211,18 @@ async function render() {
   else if (verify && verify.verified) cn.textContent = '✅ Semua task terpenuhi! Klik Ikut Giveaway.';
   else cn.textContent = 'Selesaikan task di atas untuk bisa ikut. Connect X di dashboard kalau belum.';
 
-  // join button
+  // action button — login / connect X / join sesuai state
+  const needX = (g.tasks || []).some(t => ['follow_x','like_x','repost_x','connect_x'].includes(t.type));
   const btn = $('#btn-join');
   btn.disabled = !(ME && ME.id) || g.status !== 'open';
-  btn.textContent = g.status !== 'open' ? 'Giveaway ditutup' : (verify && verify.verified) ? 'Ikut Giveaway' : 'Login / Selesaikan Task';
+  btn.textContent = g.status !== 'open' ? 'Giveaway ditutup' : (verify && verify.verified ? 'Ikut Giveaway' : 'Selesaikan task');
   btn.onclick = async () => {
     const r = await api('/api/giveaways/' + GWID + '/enter', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
     if (r.entered) alert(r.verified ? '✅ Kamu masuk giveaway! Semoga menang 🍀' : '⚠️ Masih ada task belum selesai.');
     else alert(r.error || 'Gagal join');
     render();
   };
+  renderAction(needX);
 
   // participants — host only
   if (g.isHost) {

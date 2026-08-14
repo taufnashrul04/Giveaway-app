@@ -130,10 +130,15 @@ async function mergeUsers(fromId, toId) {
   return true;
 }
 
-app.get('/auth/x/login', (req, res) => res.redirect(x.buildAuthorizeUrl(res)));
+app.get('/auth/x/login', (req, res) => {
+  if (req.query.redirect) res.cookie('gf_redirect', req.query.redirect, { httpOnly: true, sameSite: 'lax', maxAge: 10 * 60 * 1000 });
+  res.redirect(x.buildAuthorizeUrl(res));
+});
 app.get('/auth/x/callback', async (req, res) => {
   try {
     const info = await x.exchangeCode(req.query.code, req.query.state, req, res);
+    const redirectTo = (req.cookies.gf_redirect && req.cookies.gf_redirect.startsWith('/')) ? req.cookies.gf_redirect : '/?connected=x';
+    res.clearCookie('gf_redirect');
     // If already logged in (e.g. via Discord), LINK this X account to that user
     // instead of switching/swapping the session identity.
     if (req.session.userId) {
@@ -144,7 +149,7 @@ app.get('/auth/x/callback', async (req, res) => {
         const owner = await db.get('SELECT * FROM users WHERE x_user_id=? AND id<>?', [info.x_user_id, existing.id]);
         if (owner) await mergeUsers(owner.id, existing.id);
         await db.run('UPDATE users SET x_user_id=?, x_username=?, x_access_token=? WHERE id=?', [info.x_user_id, info.x_username, info.x_access_token, existing.id]);
-        return res.redirect('/?connected=x');
+        return res.redirect(redirectTo);
       }
     }
     let u = await db.get('SELECT * FROM users WHERE x_user_id=?', [info.x_user_id]);
@@ -155,7 +160,7 @@ app.get('/auth/x/callback', async (req, res) => {
       u = { id: r.lastInsertRowid };
     }
     req.session.userId = u.id;
-    res.redirect('/?connected=x');
+    res.redirect(redirectTo);
   } catch (e) { res.status(500).send('X auth failed: ' + e.message); }
 });
 app.get('/auth/x/mock', async (req, res) => {
@@ -177,10 +182,15 @@ app.get('/auth/x/mock', async (req, res) => {
   res.redirect('/?connected=x');
 });
 
-app.get('/auth/dc/login', (req, res) => res.redirect(discord.buildAuthorizeUrl()));
+app.get('/auth/dc/login', (req, res) => {
+  if (req.query.redirect) res.cookie('gf_redirect', req.query.redirect, { httpOnly: true, sameSite: 'lax', maxAge: 10 * 60 * 1000 });
+  res.redirect(discord.buildAuthorizeUrl());
+});
 app.get('/auth/dc/callback', async (req, res) => {
   try {
     const info = await discord.exchangeCode(req.query.code);
+    const redirectTo = (req.cookies.gf_redirect && req.cookies.gf_redirect.startsWith('/')) ? req.cookies.gf_redirect : '/?connected=dc';
+    res.clearCookie('gf_redirect');
     if (!req.session.userId) {
       let u = await db.get('SELECT * FROM users WHERE dc_user_id=?', [info.dc_user_id]);
       if (!u) {
@@ -193,7 +203,7 @@ app.get('/auth/dc/callback', async (req, res) => {
     } else {
       await db.run('UPDATE users SET dc_user_id=?, dc_username=?, dc_access_token=?, dc_guilds=? WHERE id=?', [info.dc_user_id, info.dc_username, info.dc_access_token, JSON.stringify(info.dc_guilds), req.session.userId]);
     }
-    res.redirect('/?connected=dc');
+    res.redirect(redirectTo);
   } catch (e) { res.status(500).send('Discord auth failed: ' + e.message); }
 });
 app.get('/auth/dc/mock', async (req, res) => {
