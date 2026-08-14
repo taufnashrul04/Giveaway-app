@@ -80,10 +80,22 @@ client.once('ready', async () => {
 });
 
 function taskLabel(t) {
+  // normalize target: follow → username bersih; like/repost → status id singkat
+  const raw = String(t.target || '');
   switch (t.type) {
-    case 'follow_x': return 'Follow @' + (t.target || '').replace(/^@/, '') + ' di X';
-    case 'like_x': return 'Like postingan X';
-    case 'repost_x': return 'Repost postingan X';
+    case 'follow_x': {
+      let m = raw.match(/x\.com\/([A-Za-z0-9_]+)/i) || raw.match(/twitter\.com\/([A-Za-z0-9_]+)/i);
+      const h = m ? m[1] : raw.replace(/^@/, '').replace(/[^A-Za-z0-9_]/g, '');
+      return 'Follow @' + h + ' di X';
+    }
+    case 'like_x': {
+      const m = raw.match(/status\/(\d+)/) || raw.match(/\/i\/status\/(\d+)/) || raw.match(/^(\d{10,25})$/);
+      return 'Like postingan X' + (m ? ' (#' + m[1].slice(-8) + ')' : '');
+    }
+    case 'repost_x': {
+      const m = raw.match(/status\/(\d+)/) || raw.match(/\/i\/status\/(\d+)/) || raw.match(/^(\d{10,25})$/);
+      return 'Repost postingan X' + (m ? ' (#' + m[1].slice(-8) + ')' : '');
+    }
     case 'join_dc': return 'Join Discord server';
     case 'connect_x': return 'Connect akun X';
     case 'connect_dc': return 'Connect akun Discord';
@@ -189,9 +201,12 @@ async function processJoin(dcUserId, dcUsername, giveawayId) {
   if (verified) {
     return { ok: true, message: `✅ Lo masuk giveaway **#${g.id} — ${g.title}**! Semua task terpenuhi. Semoga menang 🍀` };
   } else {
-    const pending = results.filter(r => !r.ok).map(r => r.type === 'connect_x' || r.type === 'follow_x' || r.type === 'like_x' || r.type === 'repost_x'
-      ? '  ❌ ' + taskLabel(r) + ' (butuh connect akun X)'
-      : '  ❌ ' + taskLabel(r)).join('\n');
+    const { actionUrl } = require('../lib/tasks');
+    const pending = results.filter(r => !r.ok).map(r => {
+      const url = actionUrl(r);
+      const suffix = url ? ` — [buka di X](${url})` : '';
+      return '  ❌ ' + taskLabel(r) + suffix;
+    }).join('\n');
     return { ok: false, message: `⚠️ Task belum lengkap buat **#${g.id} — ${g.title}**:\n${pending}\n\nKlik tombol **Login & Connect X & Join** di bawah untuk lanjut via web.` };
   }
 }

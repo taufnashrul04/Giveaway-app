@@ -115,15 +115,41 @@ let ME = null;
 async function api(path, opts) { const r = await fetch(path, opts); const d = await r.json(); return d; }
 
 function taskLabel(t) {
+  const raw = String(t.target||'');
   switch (t.type) {
-    case 'follow_x': return 'Follow @' + (t.target||'').replace(/^@/,'') + ' di X';
-    case 'like_x': return 'Like postingan X';
-    case 'repost_x': return 'Repost postingan X';
+    case 'follow_x': {
+      let m = raw.match(/x\.com\/([A-Za-z0-9_]+)/i) || raw.match(/twitter\.com\/([A-Za-z0-9_]+)/i);
+      const h = m ? m[1] : raw.replace(/^@/,'').replace(/[^A-Za-z0-9_]/g,'');
+      return 'Follow @' + h + ' di X';
+    }
+    case 'like_x': {
+      const m = raw.match(/status\/(\d+)/) || raw.match(/\/i\/status\/(\d+)/) || raw.match(/^(\d{10,25})$/);
+      return 'Like postingan X' + (m ? ' (#'+m[1].slice(-8)+')' : '');
+    }
+    case 'repost_x': {
+      const m = raw.match(/status\/(\d+)/) || raw.match(/\/i\/status\/(\d+)/) || raw.match(/^(\d{10,25})$/);
+      return 'Repost postingan X' + (m ? ' (#'+m[1].slice(-8)+')' : '');
+    }
     case 'join_dc': return 'Join Discord server';
     case 'connect_x': return 'Connect akun X';
     case 'connect_dc': return 'Connect akun Discord';
     default: return t.label || 'Task';
   }
+}
+
+// URL aksi X untuk task yang belum selesai (follow → profile; like/repost → status)
+function xActionUrl(t) {
+  const raw = String(t.target||'');
+  if (t.type === 'follow_x') {
+    const m = raw.match(/x\.com\/([A-Za-z0-9_]+)/i);
+    const h = m ? m[1] : raw.replace(/^@/,'').replace(/[^A-Za-z0-9_]/g,'');
+    return h ? 'https://x.com/' + h : '#';
+  }
+  if (t.type === 'like_x' || t.type === 'repost_x') {
+    const m = raw.match(/status\/(\d+)/) || raw.match(/\/i\/status\/(\d+)/) || raw.match(/^(\d{10,25})$/);
+    return m ? 'https://x.com/i/status/' + m[1] : '#';
+  }
+  return '#';
 }
 
 async function loadMe() {
@@ -202,6 +228,14 @@ async function render() {
     dot.textContent = ok === undefined ? '·' : ok ? '✓' : '✕';
     const tb = document.createElement('span'); tb.className = 'task-title'; tb.textContent = taskLabel(t);
     li.appendChild(dot); li.appendChild(tb);
+    // link aksi ke X kalau belum selesai (follow/like/repost)
+    if (ok === false && ['follow_x','like_x','repost_x'].includes(t.type)) {
+      const a = document.createElement('a');
+      a.className = 'btn-sm btn ghost'; a.style.cssText = 'margin-left:auto;white-space:nowrap';
+      a.href = xActionUrl(t); a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = 'Buka X ➤';
+      li.appendChild(a);
+    }
     taskList.appendChild(li);
   }
 
