@@ -212,6 +212,24 @@ $('#btn-proj').onclick = async () => {
 $('#btn-logout').onclick = async () => { await fetch('/api/logout',{method:'POST'}); location.reload(); };
 if (new URLSearchParams(location.search).get('connected')) toast('✅ Akun terhubung!');
 loadMe().then(()=>{ loadGiveaways(); loadProjects(); });
+
+// Auto-focus giveaway when arriving via Discord Join button (?giveaway=N)
+const gwParam = new URLSearchParams(location.search).get('giveaway');
+if (gwParam) {
+  const waitFocus = setInterval(() => {
+    const btn = document.querySelector(`[data-enter="${gwParam}"], [data-view="${gwParam}"]`);
+    if (btn) {
+      clearInterval(waitFocus);
+      const card = btn.closest('.card');
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.style.border = '2px solid var(--accent)';
+        toast('👋 Klik "Ikut" untuk join giveaway #' + gwParam);
+        setTimeout(() => { card.style.border = '1px solid var(--border)'; }, 4000);
+      }
+    }
+  }, 500);
+}
 </script>
 </body>
 </html>

@@ -198,6 +198,19 @@ app.get('/api/dashboard', async (req, res) => {
   res.json({ mine, entered, myProjects });
 });
 
+// notify Discord bot: giveaway dibuat → bot post announce ke Discord dengan tombol join
+function notifyBotGiveaway(gw) {
+  const botUrl = process.env.GIVEFUEL_BOT_URL || '';
+  const announceSecret = process.env.DC_ANNOUNCE_SECRET || '';
+  if (!botUrl || !announceSecret) return;
+  fetch(`${botUrl}/giveaway`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-announce-secret': announceSecret },
+    body: JSON.stringify({ giveawayId: gw.id, title: gw.title, prize: gw.prize, description: gw.description, projectName: gw.pn || null, hostHandle: gw.host || null }),
+  }).catch(e => console.error('[notify giveaway] failed:', e.message));
+}
+
+// ---------- GIVEAWAYS ----------
 app.get('/api/giveaways', async (req, res) => {
   const rows = await db.all(`SELECT g.*, u.x_username AS host, p.name AS project_name, p.slug AS project_slug, p.logo AS project_logo
     FROM giveaways g LEFT JOIN users u ON u.id=g.created_by LEFT JOIN projects p ON p.id=g.project_id
@@ -232,6 +245,7 @@ app.post('/api/giveaways', async (req, res) => {
     VALUES (?,?,?,?,?,?,?,?,?,?)`,
     [req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null,
       xFollow, require_x_repost || null, dcg, tasksJson]);
+  notifyBotGiveaway({ id: r.lastInsertRowid, title, prize, description, host: null, pn: null });
   res.json({ id: r.lastInsertRowid, ok: true });
 });
 
@@ -369,6 +383,7 @@ app.post('/api/projects/:id/giveaways', async (req, res) => {
     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
     [p.id, req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null,
       xFollow, require_x_repost || null, dcg, tasksJson]);
+  notifyBotGiveaway({ id: r.lastInsertRowid, title, prize, description, host: null, pn: p.name });
   res.json({ id: r.lastInsertRowid, ok: true });
 });
 

@@ -170,20 +170,46 @@ client.login(DISCORD_BOT_TOKEN);
 // ---- Winner announce HTTP endpoint ----
 // Web server POSTs here after a draw. Listens on GIVEFUEL_ANNOUNCE_PORT (default 4210).
 const http = require('http');
-async function announceWinner(payload) {
-  const { giveawayId, title, prize, winners } = payload;
-  let targetChannel = ANNOUNCE_CHANNEL;
-  // if bot has per-giveaway channel registered, use it
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+// Resolve target channel: per-giveaway (bot_announce) or env default.
+async function resolveChannel(giveawayId) {
+  let target = ANNOUNCE_CHANNEL;
   try {
     const row = (await all(`SELECT channel_id FROM bot_announce WHERE giveaway_id=?`, [giveawayId]))[0];
-    if (row?.channel_id) targetChannel = row.channel_id;
+    if (row?.channel_id) target = row.channel_id;
   } catch (e) {}
-  if (!targetChannel) {
-    console.warn(`[announce] no channel for giveaway #${giveawayId} — announce skipped. Set DC_ANNOUNCE_CHANNEL or register channel.`);
-    return { ok: false, reason: 'no_channel' };
-  }
-  const channel = await client.channels.fetch(targetChannel).catch(() => null);
-  if (!channel?.isTextBased()) { console.warn('[announce] channel not found/not text:', targetChannel); return { ok: false, reason: 'bad_channel' }; }
+  return target;
+}
+
+// Post a NEW giveaway announcement to Discord with a Join button → opens web.
+async function announceGiveaway(payload) {
+  const { giveawayId, title, prize, description, projectName, hostHandle } = payload;
+  const target = await resolveChannel(giveawayId);
+  if (!target) return { ok: false, reason: 'no_channel' };
+  const channel = await client.channels.fetch(target).catch(() => null);
+  if (!channel?.isTextBased()) { console.warn('[announce] channel not found:', target); return { ok: false, reason: 'bad_channel' }; }
+  const joinUrl = `${BASE_URL}/project.html${projectName ? '' : ''}?id=${giveawayId}`;
+  // point to the giveaway — reuse web details page by id (feed/project anchor)
+  const detailUrl = `${BASE_URL}/?giveaway=${giveawayId}`;
+  const emb = new EmbedBuilder()
+    .setTitle('🎁 ' + (title || 'Giveaway #' + giveawayId))
+    .setDescription((projectName ? `**${projectName}**\n` : '') + (hostHandle ? `Host: @${hostHandle}\n` : '') + (prize ? `🏆 Hadiah: **${prize}**\n` : '') + (description ? '\n' + description : ''))
+    .setColor(0x4f7cff)
+    .setFooter({ text: 'GiveFuel — klik tombol Join untuk ikut via web' });
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setLabel('🎟️ Join Giveaway').setStyle(ButtonStyle.Link).setURL(detailUrl)
+  );
+  await channel.send({ embeds: [emb], components: [row] });
+  return { ok: true };
+}
+
+async function announceWinner(payload) {
+  const { giveawayId, title, prize, winners } = payload;
+  const target = await resolveChannel(giveawayId);
+  if (!target) { console.warn(`[announce] no channel for giveaway #${giveawayId} — announce skipped. Set DC_ANNOUNCE_CHANNEL or register channel.`); return { ok: false, reason: 'no_channel' }; }
+  const channel = await client.channels.fetch(target).catch(() => null);
+  if (!channel?.isTextBased()) { console.warn('[announce] channel not found/not text:', target); return { ok: false, reason: 'bad_channel' }; }
   const winLines = (winners || []).map(w => `  🏆 <@${w.dc_user_id || '@unknown'}>${w.dc_username ? ' (' + w.dc_username + ')' : ''}`);
   const emb = new EmbedBuilder()
     .setTitle('🏆 Winner Announcement')
@@ -205,19 +231,23 @@ client.on('interactionCreate', async (i) => {
 });
 const PORT = parseInt(process.env.GIVEFUEL_ANNOUNCE_PORT || '4210', 10);
 const server = http.createServer(async (req, res) => {
-  if (req.method !== 'POST' || req.url !== '/announce') { res.writeHead(404); return res.end(); }
   let body = '';
   req.on('data', c => body += c);
   req.on('end', async () => {
     try {
-      const payload = JSON.parse(body || '{}');
-      // basic auth via announce secret
       if (req.headers['x-announce-secret'] !== (process.env.DC_ANNOUNCE_SECRET || '')) {
         res.writeHead(403); return res.end(JSON.stringify({ ok: false, reason: 'bad_secret' }));
       }
-      const out = await announceWinner(payload);
-      res.writeHead(out.ok ? 200 : 200);
-      res.end(JSON.stringify(out));
+      const payload = JSON.parse(body || '{}');
+      let out;
+      if (req.method === 'POST' && req.url === '/giveaway') {
+        out = await announceGiveaway(payload);       // new giveaway posted to Discord
+      } else if (req.method === 'POST' && req.url === '/announce') {
+        out = await announceWinner(payload);          // winners announced
+      } else {
+        res.writeHead(404); return res.end(JSON.stringify({ ok: false, reason: 'not_found' }));
+      }
+      res.writeHead(200); res.end(JSON.stringify(out));
     } catch (e) { res.writeHead(500); res.end(JSON.stringify({ ok: false, error: e.message })); }
   });
 });
