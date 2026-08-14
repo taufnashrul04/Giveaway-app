@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GiveFuel — Giveaway</title>
+<style>
+  :root { --bg:#0b0e14; --card:#131722; --border:#232a3a; --text:#e8ecf4; --muted:#8b93a7;
+          --accent:#4f7cff; --green:#2ecc71; --red:#e74c3c; --amber:#f39c12; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  .top { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:10; }
+  .top .brand { font-weight:800; font-size:18px; color:var(--accent); }
+  .top .right { display:flex; gap:10px; align-items:center; }
+  a { color:var(--accent); text-decoration:none; }
+  .wrap { max-width:720px; margin:0 auto; padding:24px 16px 60px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; margin-bottom:16px; }
+  h1 { font-size:24px; margin-bottom:4px; }
+  .proj { display:inline-block; background:rgba(79,124,255,.15); color:var(--accent); border-radius:6px; padding:3px 10px; font-size:12px; font-weight:700; margin-bottom:10px; }
+  .prize { font-size:20px; font-weight:800; color:var(--accent); margin:10px 0; }
+  .meta { color:var(--muted); font-size:14px; margin-bottom:12px; }
+  .desc { color:var(--text); line-height:1.55; white-space:pre-wrap; margin-bottom:16px; }
+  .stat { display:flex; gap:16px; margin:14px 0; }
+  .stat .box { flex:1; text-align:center; background:#0d1119; border:1px solid var(--border); border-radius:12px; padding:12px; }
+  .stat .n { font-size:22px; font-weight:800; }
+  .stat .l { font-size:12px; color:var(--muted); }
+  .badge { display:inline-block; padding:4px 12px; border-radius:99px; font-size:12px; font-weight:700; }
+  .open { background:rgba(46,204,113,.15); color:var(--green); }
+  .drawn { background:rgba(79,124,255,.15); color:var(--accent); }
+  .closed { background:rgba(139,147,167,.2); color:var(--muted); }
+  .tasks { list-style:none; margin:12px 0; }
+  .tasks li { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:#0d1119; }
+  .dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+  .dot.ok { background:rgba(46,204,113,.2); color:var(--green); border:1px solid var(--green); }
+  .dot.no { background:rgba(231,76,60,.2); color:var(--red); border:1px solid var(--red); }
+  .dot.wait { background:rgba(243,156,18,.15); color:var(--amber); border:1px solid var(--amber); }
+  .task-title { font-weight:600; flex:1; }
+  .btn { display:inline-block; border:none; border-radius:10px; padding:12px 22px; font-size:15px; font-weight:700; cursor:pointer; text-align:center; }
+  .btn.primary { background:var(--accent); color:#fff; width:100%; }
+  .btn.primary:disabled { background:#2a3550; color:var(--muted); cursor:not-allowed; }
+  .btn.ghost { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .row { display:flex; gap:8px; }
+  .btn-sm { padding:8px 14px; font-size:13px; }
+  .table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+  .table th, .table td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--border); }
+  .table th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+  .note { color:var(--muted); font-size:13px; margin-top:8px; }
+  .h3 { font-size:16px; font-weight:700; margin-bottom:4px; }
+  .winner { background:rgba(46,204,113,.1); border:1px solid rgba(46,204,113,.35); border-radius:10px; padding:10px 14px; margin-bottom:8px; }
+  .chk { color:#8b93a7; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="brand" href="/">GiveFuel</a>
+  <div class="right">
+    <span id="userlabel" class="chk"></span>
+  </div>
+</div>
+<div class="wrap">
+  <div id="load" style="color:var(--muted);text-align:center;padding:40px">Memuat giveaway…</div>
+
+  <div id="main" style="display:none">
+    <!-- HEADER -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <span id="proj-name" class="proj" style="display:none"></span>
+          <h1 id="g-title"></h1>
+          <div class="meta" id="g-host"></div>
+        </div>
+        <span id="g-badge" class="badge"></span>
+      </div>
+      <div id="g-prize" class="prize"></div>
+
+      <div class="stat">
+        <div class="box"><div class="n" id="stat-entries">0</div><div class="l">Entries</div></div>
+        <div class="box"><div class="n" id="stat-winners">0</div><div class="l">Winner</div></div>
+        <div class="box"><div class="n" id="stat-end">–</div><div class="l">Selesai</div></div>
+      </div>
+
+      <div id="g-desc" class="desc"></div>
+      <div id="winner-box"></div>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div class="card">
+      <div class="h3" style="margin-bottom:3px">Requirements</div>
+      <div class="chk" style="margin-bottom:8px">Merah = belum selesai · Hijau = selesai</div>
+      <ul class="tasks" id="task-list"></ul>
+      <div id="connected-note" class="note"></div>
+      <div style="margin-top:14px">
+        <button class="btn primary" id="btn-join">Ikut Giveaway</button>
+      </div>
+    </div>
+
+    <!-- PARTICIPANTS (host only) -->
+    <div class="card" id="participants-card" style="display:none">
+      <div class="h3">Peserta yang ikut (<span id="part-count">0</span>)</div>
+      <table class="table">
+        <thead><tr><th>#</th><th>Discord</th><th>X</th><th>Wallet</th><th>Verify</th></tr></thead>
+        <tbody id="part-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const GWID = new URLSearchParams(location.search).get('id');
+let ME = null;
+
+async function api(path, opts) { const r = await fetch(path, opts); const d = await r.json(); return d; }
+
+function taskLabel(t) {
+  switch (t.type) {
+    case 'follow_x': return 'Follow @' + (t.target||'').replace(/^@/,'') + ' di X';
+    case 'like_x': return 'Like postingan X';
+    case 'repost_x': return 'Repost postingan X';
+    case 'join_dc': return 'Join Discord server';
+    case 'connect_x': return 'Connect akun X';
+    case 'connect_dc': return 'Connect akun Discord';
+    default: return t.label || 'Task';
+  }
+}
+
+async function loadMe() {
+  const d = await api('/api/me');
+  ME = d;
+  $('#userlabel').textContent = d.id ? ('👤 ' + (d.dc_username || d.x_username || 'user')) : '';
+}
+
+async function render() {
+  const g = await api('/api/giveaways/' + GWID);
+  if (g.error) { $('#load').innerHTML = '<p>' + esc(g.error) + '</p>'; return; }
+  $('#main').style.display = 'block';
+  $('#load').style.display = 'none';
+
+  // header
+  $('#g-title').textContent = g.title;
+  $('#g-host').textContent = 'Host: ' + (g.host.x_username || g.host.dc_username || '?');
+  if (g.project) { $('#proj-name').style.display='inline-block'; $('#proj-name').textContent = g.project.name; }
+  $('#g-prize').textContent = g.prize || '';
+  $('#stat-entries').textContent = g.entry_count;
+  $('#stat-winners').textContent = g.winners_count;
+  $('#stat-end').textContent = g.ends_at ? new Date(g.ends_at).toLocaleDateString() : '–';
+  $('#g-desc').textContent = g.description || '';
+  const badge = $('#g-badge');
+  badge.className = 'badge ' + g.status;
+  badge.textContent = g.status === 'open' ? 'OPEN' : g.status === 'drawn' ? 'DRAWN' : 'CLOSED';
+
+  // winners
+  const wb = $('#winner-box');
+  wb.innerHTML = '';
+  if (g.winners && g.winners.length) {
+    wb.innerHTML = '<div class="h3" style="margin-bottom:8px">🏆 Pemenang</div>';
+    for (const w of g.winners) {
+      const el = document.createElement('div'); el.className = 'winner';
+      el.textContent = '👤 ' + (w.dc_username || w.x_username || '#'+w.user_id);
+      wb.appendChild(el);
+    }
+  }
+
+  // tasks — status tergantung login + verify
+  const taskList = $('#task-list');
+  taskList.innerHTML = '';
+  let verify = null;
+  if (ME && ME.id) verify = await api('/api/giveaways/' + GWID + '/verify');
+  for (const t of (g.tasks || [])) {
+    const li = document.createElement('li');
+    const r = verify ? (verify.tasks.find(x => x.type === t.type) || {}) : {};
+    const ok = r.ok;
+    const dot = document.createElement('div');
+    dot.className = 'dot ' + (ok === undefined ? 'wait' : ok ? 'ok' : 'no');
+    dot.textContent = ok === undefined ? '·' : ok ? '✓' : '✕';
+    const tb = document.createElement('span'); tb.className = 'task-title'; tb.textContent = taskLabel(t);
+    li.appendChild(dot); li.appendChild(tb);
+    taskList.appendChild(li);
+  }
+
+  // connected note
+  const cn = $('#connected-note');
+  if (!ME || !ME.id) cn.textContent = 'Login untuk melihat status task & ikut giveaway.';
+  else if (verify && verify.verified) cn.textContent = '✅ Semua task terpenuhi! Klik Ikut Giveaway.';
+  else cn.textContent = 'Selesaikan task di atas untuk bisa ikut. Connect X di dashboard kalau belum.';
+
+  // join button
+  const btn = $('#btn-join');
+  btn.disabled = !(ME && ME.id) || g.status !== 'open';
+  btn.textContent = g.status !== 'open' ? 'Giveaway ditutup' : (verify && verify.verified) ? 'Ikut Giveaway' : 'Login / Selesaikan Task';
+  btn.onclick = async () => {
+    const r = await api('/api/giveaways/' + GWID + '/enter', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    if (r.entered) alert(r.verified ? '✅ Kamu masuk giveaway! Semoga menang 🍀' : '⚠️ Masih ada task belum selesai.');
+    else alert(r.error || 'Gagal join');
+    render();
+  };
+
+  // participants — host only
+  if (g.isHost) {
+    const pc = $('#participants-card'); pc.style.display = 'block';
+    const parts = await api('/api/giveaways/' + GWID + '/participants');
+    $('#part-count').textContent = parts.length;
+    const tb = $('#part-tbody'); tb.innerHTML = '';
+    parts.forEach((p, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td>
+        <td>${esc(p.dc_username || '–')}</td>
+        <td>${esc(p.x_username || '–')}</td>
+        <td style="font-size:12px">${esc(p.wallet ? p.wallet.slice(0,8)+'…' : '–')}</td>
+        <td>${p.verified ? '✅' : '⛔'}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+}
+
+loadMe().then(render);
+</script>
+</body>
+</html>

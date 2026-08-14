@@ -268,11 +268,47 @@ app.get('/api/giveaways', async (req, res) => {
   res.json(result);
 });
 
+// Parse tasks dari giveaway (JSON tasks, fallback ke legacy columns)
+function getTasks(g) {
+  let tasks = [];
+  try { tasks = JSON.parse(g.tasks || '[]'); } catch (e) { tasks = []; }
+  if (!tasks.length) {
+    if (g.require_x_follow) tasks.push({ type: 'follow_x', target: g.require_x_follow });
+    if (g.require_x_repost) tasks.push({ type: 'repost_x' });
+    if (g.require_dc_guild) tasks.push({ type: 'join_dc', target: g.require_dc_guild });
+  }
+  return tasks;
+}
+
 app.get('/api/giveaways/:id', async (req, res) => {
   const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
   if (!g) return res.status(404).json({ error: 'not found' });
   const winnerRows = await db.all(`SELECT w.*, u.x_username, u.dc_username FROM winners w JOIN users u ON u.id=w.user_id WHERE w.giveaway_id=?`, [g.id]);
-  res.json({ ...g, winners: winnerRows });
+  const c = await db.get('SELECT COUNT(*) c FROM entries WHERE giveaway_id=?', [g.id]);
+  const host = (await db.get('SELECT x_username, dc_username FROM users WHERE id=?', [g.created_by])) || {};
+  const proj = g.project_id ? await db.get('SELECT name, slug FROM projects WHERE id=?', [g.project_id]) : null;
+  res.json({ ...g, winners: winnerRows, entry_count: Number(c.c), tasks: getTasks(g), host, project: proj, isHost: req.session.userId === g.created_by });
+});
+
+// Task verification status for the CURRENT user (no entry insert). Returns per-task ok + overall.
+app.get('/api/giveaways/:id/verify', async (req, res) => {
+  const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
+  if (!g) return res.status(404).json({ error: 'not found' });
+  const u = await currentUser(req);
+  const { verifyTasks } = require('../lib/tasks');
+  const tasks = getTasks(g);
+  const { results, verified } = await verifyTasks(tasks, u, X_VERIFY, xscrape);
+  res.json({ tasks: results, verified });
+});
+
+// Participants list — HOST ONLY.
+app.get('/api/giveaways/:id/participants', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'login first' });
+  const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
+  if (!g) return res.status(404).json({ error: 'not found' });
+  if (g.created_by !== req.session.userId) return res.status(403).json({ error: 'not your giveaway' });
+  const rows = await db.all(`SELECT e.*, u.dc_username, u.dc_user_id, u.x_username, u.wallet FROM entries e JOIN users u ON u.id=e.user_id WHERE e.giveaway_id=? ORDER BY e.id`, [g.id]);
+  res.json(rows);
 });
 
 app.post('/api/giveaways', async (req, res) => {

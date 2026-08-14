@@ -218,7 +218,7 @@ async function announceGiveaway(payload) {
   if (!channel?.isTextBased()) { console.warn('[announce] channel not found:', target); return { ok: false, reason: 'bad_channel' }; }
   const joinUrl = `${BASE_URL}/project.html${projectName ? '' : ''}?id=${giveawayId}`;
   // point to the giveaway — reuse web details page by id (feed/project anchor)
-  const detailUrl = `${BASE_URL}/?giveaway=${giveawayId}`;
+  const detailUrl = `${BASE_URL}/giveaway.html?id=${giveawayId}`;
   const emb = new EmbedBuilder()
     .setTitle('🎁 ' + (title || 'Giveaway #' + giveawayId))
     .setDescription((projectName ? `**${projectName}**\n` : '') + (hostHandle ? `Host: @${hostHandle}\n` : '') + (prize ? `🏆 Hadiah: **${prize}**\n` : '') + (description ? '\n' + description : ''))
