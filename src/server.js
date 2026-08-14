@@ -117,6 +117,10 @@ async function mergeUsers(fromId, toId) {
     if (!to.dc_access_token && from.dc_access_token) carry.dc_access_token = from.dc_access_token;
     if (!to.dc_guilds && from.dc_guilds) carry.dc_guilds = from.dc_guilds;
     if (!to.wallet && from.wallet) carry.wallet = from.wallet;
+    // CRITICAL: null out the UNIQUE columns (x_user_id, dc_user_id) on fromId BEFORE
+    // carrying them to toId, else we hit UNIQUE constraint (fromId still holds them).
+    if (from.x_user_id) await db.run('UPDATE users SET x_user_id=NULL WHERE id=?', [fromId]);
+    if (from.dc_user_id) await db.run('UPDATE users SET dc_user_id=NULL WHERE id=?', [fromId]);
     if (Object.keys(carry).length) {
       const sets = Object.keys(carry).map(k => `${k}=?`).join(',');
       await db.run(`UPDATE users SET ${sets} WHERE id=?`, [...Object.values(carry), toId]);
