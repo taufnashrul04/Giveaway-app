@@ -3,233 +3,176 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GiveFuel — Free Web3 Giveaway Platform</title>
+<title>GiveFuel — Web3 Giveaway & Quest Platform</title>
+<meta name="description" content="Run and join Web3 giveaways. Connect X & Discord, complete quests, win prizes. Free forever.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b0e14; --card:#141a26; --border:#232c3d; --text:#e6ebf4; --muted:#8b95a8; --accent:#4f7cff; --accent2:#7c5cff; --green:#2ecc71; --red:#e74c3c; }
+  :root {
+    --bg:#08090a; --panel:#0f1011; --surface:#191a1b; --surface2:#28282c;
+    --text:#f7f8f8; --text2:#d0d6e0; --text3:#8a8f98; --text4:#62666d;
+    --accent:#5e6ad2; --accent2:#7170ff; --accent3:#828fff;
+    --green:#27a644; --red:#e5484d; --amber:#f5a524;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.05);
+    --radius:8px;
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-  .wrap { max-width:1000px; margin:0 auto; padding:24px 16px; }
-  header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
-  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-right:auto; }
-  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:.15s; }
-  .btn:hover { border-color:var(--accent); transform:translateY(-1px); }
-  .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none; color:#fff; }
-  .btn.discord { background:#5865F2; border:none; color:#fff; }
-  .btn.ghost { background:transparent; }
-  .btn.sm { padding:6px 12px; font-size:13px; }
-  .badge { font-size:12px; padding:3px 10px; border-radius:20px; background:var(--card); border:1px solid var(--border); color:var(--muted); }
-  .badge.green { color:var(--green); border-color:var(--green); }
-  .badge.red { color:var(--red); border-color:var(--red); }
-  .badge.accent { color:var(--accent); border-color:var(--accent); }
-  .badge.purple { color:var(--accent2); border-color:var(--accent2); }
-  h1 { font-size:30px; line-height:1.2; margin-bottom:8px; }
-  .sub { color:var(--muted); margin-bottom:20px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-top:16px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; }
-  .card h3 { font-size:17px; margin-bottom:6px; }
-  .card .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
-  .card .prize { color:var(--accent); font-weight:700; margin-bottom:10px; }
-  .tasks { font-size:13px; color:var(--muted); margin-bottom:14px; }
-  .tasks li { margin-left:16px; margin-bottom:2px; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .form { display:grid; gap:12px; margin-top:14px; }
-  .form label { font-size:13px; color:var(--muted); }
-  .form input,.form textarea,.form select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:14px; }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--card); border:1px solid var(--accent); font-size:14px; z-index:99; display:none; }
-  .toast.show { display:block; }
-  .section-title { font-size:20px; font-weight:700; margin:32px 0 4px; }
-  .muted { color:var(--muted); }
-  .proj { display:inline-block; font-size:12px; color:var(--accent2); background:rgba(124,92,255,.12); padding:3px 10px; border-radius:20px; margin-bottom:8px; }
-  details { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin:20px 0; }
-  summary { cursor:pointer; font-weight:700; }
-  .proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-top:12px; }
+  body {
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    font-feature-settings:'cv01','ss03';
+    background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  .nav { position:sticky; top:0; z-index:50; background:rgba(8,9,10,0.8); backdrop-filter:blur(12px); border-bottom:1px solid var(--border2); }
+  .nav-in { max-width:1200px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px; letter-spacing:-0.3px; color:var(--text); text-decoration:none; }
+  .brand svg { width:22px; height:22px; }
+  .nav-links { display:flex; gap:4px; align-items:center; }
+  .nav-links a { color:var(--text2); text-decoration:none; font-size:13.5px; font-weight:500; padding:7px 12px; border-radius:6px; }
+  .nav-links a:hover { color:var(--text); background:rgba(255,255,255,0.04); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:none; border-radius:6px; cursor:pointer; font-family:inherit; font-weight:500; text-decoration:none; transition:all .15s ease; }
+  .btn-primary { background:var(--accent); color:#fff; padding:9px 18px; font-size:14px; }
+  .btn-primary:hover { background:var(--accent3); }
+  .btn-ghost { background:rgba(255,255,255,0.02); color:var(--text2); padding:9px 16px; font-size:14px; border:1px solid var(--border); }
+  .btn-ghost:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+  .btn-sm { padding:6px 12px; font-size:13px; }
+  .wrap { max-width:1200px; margin:0 auto; padding:0 24px; }
+  .hero { padding:88px 0 64px; text-align:center; }
+  .hero h1 { font-size:56px; font-weight:600; letter-spacing:-1.2px; line-height:1.05; }
+  .hero p { color:var(--text3); font-size:18px; margin:20px auto 32px; max-width:560px; line-height:1.6; }
+  .hero-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(94,106,210,0.12); color:var(--accent3); border:1px solid rgba(94,106,210,0.25); padding:6px 14px; border-radius:999px; font-size:13px; font-weight:500; margin-bottom:24px; }
+  .section { padding:40px 0; }
+  .section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .section-head h2 { font-size:22px; font-weight:600; letter-spacing:-0.4px; }
+  .section-head .sub { color:var(--text3); font-size:14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
+  .card { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; transition:border-color .15s, background .15s; display:flex; flex-direction:column; gap:10px; }
+  .card:hover { border-color:rgba(255,255,255,0.16); background:rgba(255,255,255,0.03); }
+  .card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .card h3 { font-size:16px; font-weight:600; letter-spacing:-0.2px; line-height:1.35; }
+  .card .meta { color:var(--text3); font-size:13px; }
+  .card .prize { color:var(--accent3); font-weight:600; font-size:15px; }
+  .card .desc { color:var(--text3); font-size:13.5px; line-height:1.55; }
+  .proj-tag { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.05); border:1px solid var(--border2); color:var(--text2); padding:3px 10px; border-radius:999px; font-size:12px; font-weight:500; }
+  .status { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; }
+  .status.open { background:rgba(39,166,68,0.12); color:var(--green); }
+  .status.drawn { background:rgba(94,106,210,0.15); color:var(--accent3); }
+  .status.closed { background:rgba(255,255,255,0.06); color:var(--text3); }
+  .tasks { list-style:none; display:flex; flex-direction:column; gap:6px; }
+  .tasks li { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text2); }
+  .tasks li::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--text4); flex-shrink:0; }
+  .card-actions { display:flex; gap:8px; margin-top:4px; }
+  .empty { text-align:center; color:var(--text4); padding:48px 0; font-size:15px; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:12px 20px; border-radius:8px; font-size:14px; opacity:0; transition:all .3s ease; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .user-chip { display:flex; align-items:center; gap:8px; color:var(--text2); font-size:13.5px; font-weight:500; }
+  .user-chip .dot { width:7px; height:7px; border-radius:50%; background:var(--green); }
+  .footer { border-top:1px solid var(--border2); padding:32px 0; margin-top:64px; color:var(--text4); font-size:13px; text-align:center; }
+  @media (max-width:640px){ .hero h1{font-size:38px;letter-spacing:-0.8px} .hero{padding:56px 0 40px} .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="logo">⛽ GiveFuel</div>
-    <span class="badge" id="userlabel">Not connected</span>
-    <a class="btn sm discord" href="/auth/dc/login" id="btn-dc">Login with Discord</a>
-    <a class="btn sm" href="/dashboard.html" id="btn-dash" style="display:none">Dashboard</a>
-    <button class="btn sm ghost" id="btn-logout" style="display:none">Logout</button>
-  </header>
-
-  <h1>Free Web3 Giveaway Platform</h1>
-  <p class="sub">Pasukan &amp; proyek bikin giveaway, user ikut dengan connect Discord + X. 100% free. Kayak Alphabot &amp; Atlas3.</p>
-
-  <!-- For teams: create project -->
-  <details>
-    <summary>🏗️ Buat Project (DAO / NFT / Komunitas) — buat team lo</summary>
-    <div class="form">
-      <div><label>Nama Project *</label><input id="p-name" placeholder="e.g. My DAO"></div>
-      <div><label>Type</label>
-        <select id="p-type"><option value="nft">NFT</option><option value="dao">DAO</option><option value="community">Community</option></select>
-      </div>
-      <div><label>Deskripsi</label><textarea id="p-desc" placeholder="Apa project lo?"></textarea></div>
-      <div class="row">
-        <div style="flex:1"><label>Website (optional)</label><input id="p-web" placeholder="https://..."></div>
-        <div style="flex:1"><label>Twitter / X (optional)</label><input id="p-tw" placeholder="@handle"></div>
-      </div>
-      <div><button class="btn primary" id="btn-proj">Buat Project</button></div>
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="4" fill="#5e6ad2"/><path d="M8 10h8M8 14h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+      GiveFuel
+    </a>
+    <div class="nav-links">
+      <span class="user-chip" id="userlabel" style="display:none"></span>
+      <a href="/dashboard.html" id="nav-dash" style="display:none">Dashboard</a>
+      <a href="/auth/dc/login" id="btn-login" class="btn btn-ghost btn-sm">Sign in</a>
     </div>
-  </details>
+  </div>
+</nav>
 
-  <!-- Giveaway feed -->
-  <div class="section-title">🔥 Giveaway Terbaru</div>
-  <div class="grid" id="giveaways"></div>
-  <p class="muted" id="empty" style="display:none;margin-top:16px">Belum ada giveaway — bikin project &amp; buat giveaway pertama lo!</p>
+<div class="wrap">
+  <section class="hero">
+    <div class="hero-badge">✦ Free Web3 giveaway platform</div>
+    <h1>Run giveaways.<br>Grow your community.</h1>
+    <p>Launch quests that reward your followers. Verify X follows and Discord members, draw winners at random, and export results — no paid API, no lock-in.</p>
+    <div class="hero-actions">
+      <a href="/dashboard.html" class="btn btn-primary" id="hero-create">Create a giveaway</a>
+      <a href="#giveaways" class="btn btn-ghost">Browse giveaways</a>
+    </div>
+  </section>
 
-  <!-- Projects feed -->
-  <div class="section-title">🏛️ Projects</div>
-  <div class="proj-grid" id="projects"></div>
+  <section class="section" id="giveaways">
+    <div class="section-head">
+      <div><h2>Live giveaways</h2><div class="sub">Join active campaigns from top projects</div></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" style="display:none">No giveaways yet — be the first to launch one.</div>
+  </section>
 </div>
 
+<div class="footer">GiveFuel — free Web3 giveaway &amp; quest platform. © 2026</div>
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = s => document.querySelector(s);
-let me = null;
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ME = null;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+async function api(path, opts){ const r = await fetch(path, opts); return r.json(); }
 
-async function loadMe() {
-  const r = await fetch('/api/me');
-  me = await r.json();
-  const lbl = $('#userlabel');
-  if (me) {
-    const parts = [];
-    if (me.dc_username) parts.push('DC: ' + me.dc_username);
-    if (me.x_username) parts.push('@' + me.x_username);
-    lbl.textContent = parts.length ? parts.join(' · ') : 'Connected';
-    $('#btn-logout').style.display = 'inline-flex';
-    $('#btn-dash').style.display = 'inline-flex';
-    $('#btn-dc').textContent = me.dc_username ? 'DC ✓ ' + me.dc_username : 'Login with Discord';
-  } else {
-    lbl.textContent = 'Not connected';
+function statusBadge(s){ return `<span class="status ${s}">${s==='open'?'Open':s==='drawn'?'Drawn':'Closed'}</span>`; }
+function taskLabel(t){
+  const raw=String(t.target||'');
+  switch(t.type){
+    case 'follow_x': { const m=raw.match(/x\.com\/([A-Za-z0-9_]+)/i); const h=m?m[1]:raw.replace(/^@/,'').replace(/[^A-Za-z0-9_]/g,''); return 'Follow @'+h+' on X'; }
+    case 'like_x': return 'Like the post on X';
+    case 'repost_x': return 'Repost the post on X';
+    case 'join_dc': return 'Join the Discord server';
+    case 'connect_x': return 'Connect your X account';
+    case 'connect_dc': return 'Connect your Discord account';
+    default: return t.label || 'Complete task';
   }
 }
 
-function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
-function statusBadge(s) { return s==='open'?'<span class="badge green">OPEN</span>':s==='drawn'?'<span class="badge accent">DRAWN</span>':'<span class="badge red">CLOSED</span>'; }
+async function loadMe(){
+  const d = await api('/api/me');
+  ME = d;
+  if(d.id){
+    $('#userlabel').style.display='flex';
+    $('#userlabel').innerHTML = `<span class="dot"></span> ${esc(d.dc_username || d.x_username || 'user')}`;
+    $('#nav-dash').style.display='inline-flex';
+    $('#btn-login').style.display='none';
+  }
+}
 
-async function loadGiveaways() {
-  const r = await fetch('/api/giveaways');
-  const list = await r.json();
-  const grid = $('#giveaways');
-  grid.innerHTML = '';
-  $('#empty').style.display = list.length ? 'none' : 'block';
-  for (const g of list) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    let tasks=[];
-    try{ tasks=JSON.parse(g.tasks||'[]'); }catch(e){}
+async function loadGiveaways(){
+  const list = await api('/api/giveaways');
+  const grid = $('#grid'); grid.innerHTML='';
+  if(!list.length){ $('#empty').style.display='block'; return; }
+  $('#empty').style.display='none';
+  for(const g of list){
+    let tasks=[]; try{ tasks=JSON.parse(g.tasks||'[]'); }catch(e){}
     if(!tasks.length){
-      if (g.require_x_follow) tasks.push({type:'follow_x',target:g.require_x_follow});
-      if (g.require_x_repost) tasks.push({type:'repost_x',target:g.require_x_repost});
-      if (g.require_dc_guild) tasks.push({type:'join_dc',target:g.require_dc_guild});
+      if(g.require_x_follow) tasks.push({type:'follow_x',target:g.require_x_follow});
+      if(g.require_x_repost) tasks.push({type:'repost_x'});
+      if(g.require_dc_guild) tasks.push({type:'join_dc',target:g.require_dc_guild});
     }
-    const taskLabels=tasks.map(t=>{
-      switch(t.type){
-        case 'follow_x':return 'Follow @'+(t.target||'').replace(/^@/,'')+' di X';
-        case 'like_x':return 'Like postingan X';
-        case 'repost_x':return 'Repost postingan X';
-        case 'join_dc':return 'Join Discord server';
-        case 'connect_x':return 'Connect akun X';
-        case 'connect_dc':return 'Connect akun Discord';
-        default:return t.label||'Task';
-      }
-    });
-    if(!taskLabels.length) taskLabels.push('Tidak ada tugas — langsung masuk');
-    const projBadge = g.project_name ? `<span class="proj">${esc(g.project_name)}</span>` : '';
-    card.innerHTML = `
-      <div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${statusBadge(g.status)}</div>
-      ${projBadge}
-      <div class="meta">Host: ${esc(g.host||'?')} · ${g.entry_count} entries</div>
-      ${g.prize ? '<div class="prize">' + esc(g.prize) + '</div>' : ''}
-      ${g.description ? '<p class="muted" style="margin-bottom:10px">' + esc(g.description) + '</p>' : ''}
-      <ul class="tasks">${taskLabels.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
-      <div class="row">
-        <button class="btn sm primary" data-enter="${g.id}">Ikut</button>
-        <button class="btn sm ghost" data-view="${g.id}">Lihat</button>
+    const labels=tasks.map(taskLabel);
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML=`
+      <div class="card-top">
+        <h3>${esc(g.title)}</h3>${statusBadge(g.status)}
+      </div>
+      ${g.project_name?`<div><span class="proj-tag">${esc(g.project_name)}</span></div>`:''}
+      <div class="meta">${g.entry_count} entries · by ${esc(g.host||'?')}</div>
+      ${g.prize?`<div class="prize">${esc(g.prize)}</div>`:''}
+      ${g.description?`<div class="desc">${esc(g.description)}</div>`:''}
+      <ul class="tasks">${labels.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>
+      <div class="card-actions">
+        <a class="btn btn-primary btn-sm" href="/giveaway.html?id=${g.id}">View giveaway</a>
+        <a class="btn btn-ghost btn-sm" href="/g/${g.id}" target="_blank" rel="noopener">Share ↗</a>
       </div>`;
     grid.appendChild(card);
   }
-  document.querySelectorAll('[data-enter]').forEach(b => b.onclick = () => enter(b.dataset.enter));
-  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view));
 }
 
-async function loadProjects() {
-  const r = await fetch('/api/projects');
-  const list = await r.json();
-  const grid = $('#projects');
-  grid.innerHTML = '';
-  if (!list.length) { grid.innerHTML = '<p class="muted">Belum ada project — buat project pertama lo di atas!</p>'; return; }
-  for (const p of list) {
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.innerHTML = `
-      <div class="row" style="justify-content:space-between">
-        <h3>${esc(p.name)}</h3><span class="badge purple">${esc(p.type)}</span>
-      </div>
-      <div class="meta">${p.giveaway_count} giveaways · ${p.member_count} members</div>
-      ${p.description ? '<p class="muted" style="margin-bottom:10px">' + esc(p.description) + '</p>' : ''}
-      <a class="btn sm" data-proj="${p.id}" href="/project.html?id=${p.id}" style="pointer-events:none" onclick="event.preventDefault();location='/project.html?id=${p.id}'">Buka Project</a>`;
-    grid.appendChild(el);
-  }
-  document.querySelectorAll('[data-proj]').forEach(a => a.onclick = () => {});
-}
-
-async function enter(id) {
-  if (!me) { toast('Login Discord dulu'); return; }
-  const r = await fetch('/api/giveaways/' + id + '/enter', { method: 'POST' });
-  const d = await r.json();
-  if (d.error) return toast(d.error);
-  if (d.verified) toast('✅ Ikut & verified! Semoga menang.');
-  else { const p=[]; if(d.x_follow_ok)p.push('X✓'); if(d.dc_ok)p.push('DC✓'); toast('Ikut masuk, tapi tugas belum lengkap: '+(p.join(', ')||'-')); }
-  loadGiveaways();
-}
-
-async function view(id) {
-  const r = await fetch('/api/giveaways/' + id);
-  const g = await r.json();
-  const w = g.winners && g.winners.length ? g.winners.map(x => (x.x_username ? '@'+x.x_username : x.dc_username)).join(', ') : 'belum di-draw';
-  toast('Winner: ' + w);
-}
-
-$('#btn-proj').onclick = async () => {
-  if (!me) return toast('Login Discord dulu');
-  const name = $('#p-name').value.trim();
-  if (!name) return toast('Nama project wajib');
-  const body = { name, type: $('#p-type').value, description: $('#p-desc').value.trim(), website: $('#p-web').value.trim(), twitter: $('#p-tw').value.trim() };
-  const r = await fetch('/api/projects', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-  const d = await r.json();
-  if (d.error) return toast(d.error);
-  toast('✅ Project dibuat!');
-  $('#p-name').value=''; $('#p-desc').value=''; $('#p-web').value=''; $('#p-tw').value='';
-  loadProjects();
-};
-
-$('#btn-logout').onclick = async () => { await fetch('/api/logout',{method:'POST'}); location.reload(); };
-if (new URLSearchParams(location.search).get('connected')) toast('✅ Akun terhubung!');
-loadMe().then(()=>{ loadGiveaways(); loadProjects(); });
-
-// Auto-focus giveaway when arriving via Discord Join button (?giveaway=N)
-const gwParam = new URLSearchParams(location.search).get('giveaway');
-if (gwParam) {
-  const waitFocus = setInterval(() => {
-    const btn = document.querySelector(`[data-enter="${gwParam}"], [data-view="${gwParam}"]`);
-    if (btn) {
-      clearInterval(waitFocus);
-      const card = btn.closest('.card');
-      if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        card.style.border = '2px solid var(--accent)';
-        toast('👋 Klik "Ikut" untuk join giveaway #' + gwParam);
-        setTimeout(() => { card.style.border = '1px solid var(--border)'; }, 4000);
-      }
-    }
-  }, 500);
-}
+loadMe().then(loadGiveaways);
 </script>
 </body>
 </html>

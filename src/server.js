@@ -318,6 +318,62 @@ app.get('/api/giveaways/:id', async (req, res) => {
   res.json({ ...g, winners: winnerRows, entry_count: Number(c.c), tasks: getTasks(g), host, project: proj, isHost: req.session.userId === g.created_by });
 });
 
+// Public share metadata (no login) — utk OG preview & shareable link.
+app.get('/api/giveaways/:id/meta', async (req, res) => {
+  const g = await db.get('SELECT id,title,description,prize,winners_count,status FROM giveaways WHERE id=?', [req.params.id]);
+  if (!g) return res.status(404).json({ error: 'not found' });
+  const proj = g && g.project_id ? await db.get('SELECT name FROM projects WHERE id=?', [g.project_id]) : null;
+  const c = await db.get('SELECT COUNT(*) c FROM entries WHERE giveaway_id=?', [g.id]);
+  const base = process.env.BASE_URL || '';
+  res.json({
+    id: g.id,
+    title: g.title,
+    description: g.description || '',
+    prize: g.prize || '',
+    collab: proj ? proj.name : null,
+    status: g.status,
+    entry_count: Number(c.c),
+    url: `${base}/g/${g.id}`,
+  });
+});
+
+// Clean public shareable URL `/g/:id` — serves HTML w/ dynamic OG tags (works without login).
+app.get('/g/:id', async (req, res) => {
+  const g = await db.get('SELECT id,title,description,prize,winners_count,status FROM giveaways WHERE id=?', [req.params.id]);
+  if (!g) return res.status(404).send('Giveaway not found');
+  const proj = g.project_id ? await db.get('SELECT name FROM projects WHERE id=?', [g.project_id]) : null;
+  const base = process.env.BASE_URL || '';
+  const full = process.env.BASE_URL || 'https://givefuel.vercel.app';
+  const title = g.title || 'Giveaway';
+  const collab = proj ? proj.name : null;
+  const desc = g.prize ? `${g.prize}${g.description ? ' — ' + g.description : ''}` : (g.description || 'Participate in this giveaway on GiveFuel.');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}${collab ? ' | ' + collab : ''} — GiveFuel</title>
+  <meta name="description" content="${desc.replace(/"/g, '')}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="${title}${collab ? ' × ' + collab : ''} — GiveFuel">
+  <meta property="og:description" content="${desc.replace(/"/g, '')}">
+  <meta property="og:url" content="${full}/g/${g.id}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${title}${collab ? ' × ' + collab : ''}">
+  <meta name="twitter:description" content="${desc.replace(/"/g, '')}">
+  <meta http-equiv="refresh" content="0;url=${full}/giveaway.html?id=${g.id}">
+</head>
+<body style="background:#08090a;color:#f7f8f8;font-family:-apple-system,Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+  <div style="text-align:center">
+    <div style="font-size:40px">🎁</div>
+    <h1 style="font-size:22px;font-weight:600;margin:12px 0 4px">${title}</h1>
+    ${collab ? `<p style="color:#8a8f98;margin:0">${collab}</p>` : ''}
+    <p style="color:#62666d;font-size:14px;margin:16px 0">Redirecting to GiveFuel…</p>
+  </div>
+</body>
+</html>`);
+});
+
 // Task verification status for the CURRENT user (no entry insert). Returns per-task ok + overall.
 app.get('/api/giveaways/:id/verify', async (req, res) => {
   try {
@@ -475,7 +531,7 @@ app.get('/api/projects/:id', async (req, res) => {
     FROM giveaways g WHERE g.project_id=? ORDER BY g.created_at DESC`, [p.id]);
   const members = await db.all(`SELECT pm.role, u.x_username, u.dc_username FROM project_members pm
     JOIN users u ON u.id=pm.user_id WHERE pm.project_id=?`, [p.id]);
-  res.json({ ...p, giveaways, members });
+  res.json({ ...p, giveaways, members, member_count: members.length, giveaway_count: giveaways.length });
 });
 
 // Create a project (logged-in). Creator auto-added as owner.

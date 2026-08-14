@@ -4,137 +4,183 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — GiveFuel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b0e14; --card:#141a26; --border:#232c3d; --text:#e6ebf4; --muted:#8b95a8; --accent:#4f7cff; --accent2:#7c5cff; --green:#2ecc71; --red:#e74c3c; }
+  :root {
+    --bg:#08090a; --panel:#0f1011; --surface:#191a1b; --surface2:#28282c;
+    --text:#f7f8f8; --text2:#d0d6e0; --text3:#8a8f98; --text4:#62666d;
+    --accent:#5e6ad2; --accent2:#7170ff; --accent3:#828fff;
+    --green:#27a644; --red:#e5484d; --amber:#f5a524;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.05);
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-  .wrap { max-width:1000px; margin:0 auto; padding:24px 16px; }
-  header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
-  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-right:auto; }
-  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:.15s; }
-  .btn:hover { border-color:var(--accent); }
-  .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none; color:#fff; }
-  .btn.discord { background:#5865F2; border:none; color:#fff; }
-  .btn.black { background:#111; border:1px solid #333; color:#e7e9ea; }
-  .btn.sm { padding:6px 12px; font-size:13px; }
-  .badge { font-size:12px; padding:3px 10px; border-radius:20px; background:var(--card); border:1px solid var(--border); color:var(--muted); }
-  .badge.green { color:var(--green); border-color:var(--green); }
-  .badge.accent { color:var(--accent); border-color:var(--accent); }
-  .badge.purple { color:var(--accent2); border-color:var(--accent2); }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:16px; }
-  .card h3 { font-size:17px; margin-bottom:8px; }
-  .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
-  .section-title { font-size:20px; font-weight:700; margin:28px 0 12px; }
-  .form { display:grid; gap:12px; }
-  .form label { font-size:13px; color:var(--muted); }
-  .form input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:14px; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--card); border:1px solid var(--accent); font-size:14px; z-index:99; display:none; }
-  .toast.show { display:block; }
-  .muted { color:var(--muted); }
-  .proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-top:12px; }
-  .wlt { font-family:monospace; font-size:12px; color:var(--muted); word-break:break-all; }
-  .linkline { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; }
+  body { font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-feature-settings:'cv01','ss03'; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  .nav { position:sticky; top:0; z-index:50; background:rgba(8,9,10,0.8); backdrop-filter:blur(12px); border-bottom:1px solid var(--border2); }
+  .nav-in { max-width:1100px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px; color:var(--text); text-decoration:none; }
+  .brand svg { width:22px; height:22px; }
+  .nav-links { display:flex; gap:8px; align-items:center; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:none; border-radius:6px; cursor:pointer; font-family:inherit; font-weight:500; text-decoration:none; transition:all .15s; }
+  .btn-primary { background:var(--accent); color:#fff; padding:9px 18px; font-size:14px; }
+  .btn-primary:hover { background:var(--accent3); }
+  .btn-ghost { background:rgba(255,255,255,0.02); color:var(--text2); padding:8px 14px; font-size:13.5px; border:1px solid var(--border); }
+  .btn-ghost:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+  .btn-sm { padding:6px 12px; font-size:13px; }
+  .wrap { max-width:1100px; margin:0 auto; padding:40px 24px 64px; }
+  .pgrid { display:grid; grid-template-columns:320px 1fr; gap:24px; }
+  .col { display:flex; flex-direction:column; gap:16px; }
+  .card { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:14px; padding:22px; }
+  .h1 { font-size:26px; font-weight:600; letter-spacing:-0.5px; margin-bottom:4px; }
+  .sub { color:var(--text3); font-size:14px; margin-bottom:20px; }
+  .h2 { font-size:16px; font-weight:600; letter-spacing:-0.2px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+  .lbl { display:block; font-size:12px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+  .inp { width:100%; background:#0d0e10; border:1px solid var(--border); color:var(--text); padding:11px 13px; border-radius:6px; font-size:14px; outline:none; font-family:inherit; margin-bottom:14px; }
+  .inp:focus { border-color:var(--accent2); }
+  .conn { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border2); }
+  .conn:last-child { border-bottom:none; }
+  .conn .row { display:flex; align-items:center; gap:12px; }
+  .conn .ico { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:17px; background:rgba(255,255,255,0.05); border:1px solid var(--border); }
+  .conn .l { font-size:14px; font-weight:500; }
+  .conn .s { font-size:12.5px; color:var(--text3); }
+  .tag { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; }
+  .tag.ok { background:rgba(39,166,68,0.12); color:var(--green); }
+  .tag.off { background:rgba(255,255,255,0.06); color:var(--text4); }
+  .list { display:flex; flex-direction:column; gap:10px; }
+  .item { display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:10px; padding:13px 15px; }
+  .item h4 { font-size:14.5px; font-weight:600; }
+  .item .m { color:var(--text3); font-size:12.5px; }
+  .stat-card { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .stat-card .n { font-size:22px; font-weight:600; }
+  .stat-card .l { font-size:12px; color:var(--text3); }
+  .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+  .project { background:rgba(94,106,210,0.06); border:1px solid rgba(94,106,210,0.2); border-radius:12px; padding:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .project h4 { font-size:15px; font-weight:600; }
+  .project .t { font-size:12.5px; color:var(--accent3); }
+  @media (max-width:760px){ .pgrid{grid-template-columns:1fr} .stat-row{grid-template-columns:1fr 1fr} }
 </style>
 </head>
 <body>
+<nav class="nav"><div class="nav-in">
+  <a class="brand" href="/"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="4" fill="#5e6ad2"/><path d="M8 10h8M8 14h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>GiveFuel</a>
+  <div class="nav-links">
+    <a href="/" class="btn btn-ghost btn-sm">Home</a>
+    <span id="userlabel" style="color:var(--text3);font-size:13px"></span>
+  </div>
+</div></nav>
+
 <div class="wrap">
-  <header>
-    <a class="logo" href="/" style="text-decoration:none">⛽ GiveFuel</a>
-    <span class="badge" id="userlabel">Loading...</span>
-    <a class="btn sm" href="/">← Feed</a>
-    <button class="btn sm ghost" id="btn-logout" style="display:none">Logout</button>
-  </header>
+  <h1 class="h1">Dashboard</h1>
+  <div class="sub">Manage your account, projects, and giveaways.</div>
 
-  <h1>Account &amp; Settings</h1>
-  <p class="muted" style="margin-bottom:24px">Hubungkan akun &amp; tambah wallet. Kelola project lo.</p>
+  <div class="pgrid">
+    <div class="col">
+      <!-- Account -->
+      <div class="card">
+        <div class="h2">Account</div>
+        <div class="lbl">Connections</div>
+        <div class="conn">
+          <div class="row"><div class="ico">🎮</div><div><div class="l">Discord</div><div class="s" id="dc-name">not connected</div></div></div>
+          <span id="dc-tag" class="tag off">Off</span>
+        </div>
+        <div class="conn">
+          <div class="row"><div class="ico">🐦</div><div><div class="l">X (Twitter)</div><div class="s" id="x-name">not connected</div></div></div>
+          <span id="x-tag" class="tag off">Off</span>
+        </div>
+        <div class="lbl" style="margin-top:16px">Wallet address</div>
+        <input class="inp" id="wallet" placeholder="0x… or your EVM address" style="margin-bottom:8px">
+        <button class="btn btn-primary" id="btn-wallet" style="width:100%">Save wallet</button>
+      </div>
 
-  <!-- Connections -->
-  <div class="card">
-    <h3>🔗 Akun Terhubung</h3>
-    <div class="linkline"><span>Discord</span><span id="dc-status"><span class="badge red">Belum</span></span></div>
-    <div class="linkline"><span>X / Twitter</span><span id="x-status"><span class="badge red">Belum</span><a class="btn sm black" href="/auth/x/login" style="margin-left:8px">Connect X</a></span></div>
-  </div>
-
-  <!-- Wallet -->
-  <div class="card">
-    <h3>👛 Wallet Address</h3>
-    <p class="meta">Paste alamat (EVM / Tron / Solana) — dipakai saat export pemenang.</p>
-    <div class="row">
-      <input id="wallet-input" placeholder="0x... / TP... / A1..." style="flex:1;min-width:240px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
-      <button class="btn primary" id="btn-wallet">Save Wallet</button>
+      <!-- Projects -->
+      <div class="card">
+        <div class="h2">Your projects <button class="btn btn-ghost btn-sm" id="btn-addproject">+ New</button></div>
+        <div id="projects-list" class="list"></div>
+        <div id="project-form" style="display:none;margin-top:14px">
+          <div class="lbl">Project name</div><input class="inp" id="p-name" placeholder="Bantol DAO">
+          <div class="lbl">Type</div>
+          <select class="inp" id="p-type"><option value="dao">DAO</option><option value="nft">NFT</option><option value="community">Community</option></select>
+          <div class="lbl">Description</div><input class="inp" id="p-desc" placeholder="A short line about your project">
+          <div class="lbl">X handle</div><input class="inp" id="p-x" placeholder="bantoldao">
+          <div class="lbl">Discord invite</div><input class="inp" id="p-dc" placeholder="https://discord.gg/...">
+          <button class="btn btn-primary" id="btn-saveproject" style="width:100%">Create project</button>
+        </div>
+      </div>
     </div>
-    <p class="wlt" id="wallet-current" style="margin-top:10px"></p>
+
+    <div class="col">
+      <div class="stat-row">
+        <div class="stat-card"><div class="n" id="s-hosted">0</div><div class="l">Giveaways hosted</div></div>
+        <div class="stat-card"><div class="n" id="s-entered">0</div><div class="l">Giveaways entered</div></div>
+        <div class="stat-card"><div class="n" id="s-projects">0</div><div class="l">Projects</div></div>
+      </div>
+
+      <div class="card"><div class="h2">Your giveaways</div><div id="mine" class="list"></div></div>
+      <div class="card"><div class="h2">Giveaways you entered</div><div id="entered" class="list"></div></div>
+    </div>
   </div>
-
-  <!-- My projects -->
-  <div class="section-title">🏛️ Project Saya</div>
-  <div class="proj-grid" id="proj-list"><p class="muted">Loading...</p></div>
-
-  <!-- Giveaways I created -->
-  <div class="section-title">🎯 Giveaways Saya (Host)</div>
-  <div id="host-list"><p class="muted">Loading...</p></div>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .3s;z-index:100"></div>
 
 <script>
-const $ = s => document.querySelector(s);
-let me = null;
-function esc(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
-function statusBadge(s){return s==='open'?'<span class="badge green">OPEN</span>':s==='drawn'?'<span class="badge accent">DRAWN</span>':'<span class="badge red">CLOSED</span>';}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,2800);}
+async function api(path,opts){const r=await fetch(path,opts);return r.json();}
 
-async function loadMe(){
-  const r=await fetch('/api/me'); me=await r.json();
-  if(!me){ $('#userlabel').textContent='Not logged in'; $('#dc-status').innerHTML='<span class="badge red">Belum — <a href="/auth/dc/login">Login Discord</a></span>'; return; }
-  $('#userlabel').textContent = (me.dc_username?'DC: '+me.dc_username:'')+(me.x_username?' · @'+me.x_username:'');
-  $('#btn-logout').style.display='inline-flex';
-  $('#dc-status').innerHTML = me.dc_username ? '<span class="badge green">'+esc(me.dc_username)+' ✓</span>' : '<span class="badge red">Belum</span>';
-  $('#x-status').innerHTML = me.x_username ? '<span class="badge green">@'+esc(me.x_username)+' ✓</span>' : '<span class="badge red">Belum</span><a class="btn sm black" href="/auth/x/login" style="margin-left:8px">Connect X</a>';
-  $('#wallet-input').value = me.wallet||'';
-  $('#wallet-current').textContent = me.wallet ? 'Current: '+me.wallet : 'Belum set wallet';
-}
+async function load(){
+  const me = await api('/api/me');
+  if(!me.id){ location.href='/auth/dc/login?redirect='+encodeURIComponent('/dashboard.html'); return; }
+  $('#userlabel').textContent='👤 '+(me.dc_username||me.x_username);
+  // connections
+  if(me.dc_user_id){ $('#dc-name').textContent=me.dc_username; $('#dc-tag').className='tag ok'; $('#dc-tag').textContent='Connected'; }
+  if(me.x_username){ $('#x-name').textContent='@'+me.x_username; $('#x-tag').className='tag ok'; $('#x-tag').textContent='Connected'; }
+  $('#wallet').value = me.wallet || '';
 
-async function loadDashboard(){
-  const r=await fetch('/api/dashboard');
-  if(r.status===401){$('#proj-list').innerHTML='<p class="muted">Login dulu.</p>';return;}
-  const d=await r.json();
+  const d = await api('/api/dashboard');
+  $('#s-hosted').textContent=(d.mine||[]).length;
+  $('#s-entered').textContent=(d.entered||[]).length;
+  $('#s-projects').textContent=(d.myProjects||[]).length;
+
+  // mine
+  const mine=$('#mine'); mine.innerHTML='';
+  if(!(d.mine||[]).length) mine.innerHTML='<div style="color:var(--text4);font-size:13px">No giveaways yet.</div>';
+  (d.mine||[]).forEach(g=>{
+    const el=document.createElement('div'); el.className='item';
+    el.innerHTML=`<div><h4>${esc(g.title)}</h4><div class="m">${g.entry_count} entries · ${esc(g.status)}</div></div><div style="display:flex;gap:6px"><a class="btn btn-ghost btn-sm" href="/giveaway.html?id=${g.id}">View</a><a class="btn btn-ghost btn-sm" href="/g/${g.id}" target="_blank">Share</a></div>`;
+    mine.appendChild(el);
+  });
+  // entered
+  const ent=$('#entered'); ent.innerHTML='';
+  if(!(d.entered||[]).length) ent.innerHTML='<div style="color:var(--text4);font-size:13px">You haven\'t entered any giveaways yet.</div>';
+  (d.entered||[]).forEach(g=>{
+    const el=document.createElement('div'); el.className='item';
+    el.innerHTML=`<div><h4>${esc(g.title)}</h4><div class="m">${g.entry_count} entries</div></div><a class="btn btn-ghost btn-sm" href="/giveaway.html?id=${g.id}">View</a>`;
+    ent.appendChild(el);
+  });
   // projects
-  $('#proj-list').innerHTML='';
-  if(!d.myProjects.length){$('#proj-list').innerHTML='<p class="muted">Belum punya project. <a href="/">Buat di feed</a></p>';}
-  for(const p of d.myProjects){
-    const el=document.createElement('div');el.className='card';
-    el.innerHTML=`<div class="row" style="justify-content:space-between"><h3>${esc(p.name)}</h3><span class="badge purple">${esc(p.role)}</span></div>
-      <div class="meta">${p.giveaway_count} giveaways</div>
-      <a class="btn sm" href="/project.html?id=${p.id}">Kelola</a>`;
-    $('#proj-list').appendChild(el);
-  }
-  // host giveaways
-  $('#host-list').innerHTML='';
-  if(!d.mine.length){$('#host-list').innerHTML='<p class="muted">Belum bikin giveaway.</p>';}
-  for(const g of d.mine){
-    const el=document.createElement('div');el.className='card';
-    el.innerHTML=`<div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${statusBadge(g.status)}</div>
-      <div class="meta">${g.entry_count} entries · ${g.winner_count}/${g.winners_count} winners</div>
-      <div class="row"><button class="btn sm primary" data-draw="${g.id}" ${g.status!=='open'?'disabled':''}>Draw</button>
-      <button class="btn sm" data-export="${g.id}" ${g.winner_count===0?'disabled':''}>Export CSV</button></div>`;
-    $('#host-list').appendChild(el);
-    el.querySelector('[data-draw]').onclick=async()=>{const rr=await fetch('/api/giveaways/'+g.id+'/draw',{method:'POST'});const dd=await rr.json();if(dd.error)return toast(dd.error);toast('✅ Winners: #'+dd.winners.join(', #'));loadDashboard();};
-    el.querySelector('[data-export]').onclick=()=>location='/api/giveaways/'+g.id+'/export';
-  }
+  const pl=$('#projects-list'); pl.innerHTML='';
+  if(!(d.myProjects||[]).length) pl.innerHTML='<div style="color:var(--text4);font-size:13px">No projects yet.</div>';
+  (d.myProjects||[]).forEach(p=>{
+    const el=document.createElement('div'); el.className='project';
+    el.innerHTML=`<div><h4>${esc(p.name)}</h4><div class="t">${esc(p.type||'')} · ${p.giveaway_count} giveaways</div></div><a class="btn btn-ghost btn-sm" href="/project.html?id=${p.id}">Open</a>`;
+    pl.appendChild(el);
+  });
 }
 
 $('#btn-wallet').onclick=async()=>{
-  if(!me)return toast('Login dulu');
-  const wallet=$('#wallet-input').value.trim();
-  const r=await fetch('/api/me/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet})});
-  const d=await r.json();
-  if(d.error)return toast(d.error);
-  $('#wallet-current').textContent='Saved: '+d.wallet;
-  toast('✅ Wallet saved');
+  const r=await api('/api/me/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet:$('#wallet').value.trim()})});
+  toast(r.ok?'Wallet saved':'Failed to save'); if(r.ok) load();
 };
-$('#btn-logout').onclick=async()=>{await fetch('/api/logout',{method:'POST'});location.reload();};
-loadMe().then(loadDashboard);
+$('#btn-addproject').onclick=()=>{ $('#project-form').style.display=$('#project-form').style.display==='none'?'block':'none'; };
+$('#btn-saveproject').onclick=async()=>{
+  const name=$('#p-name').value.trim(); if(!name) return toast('Project name required');
+  const r=await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,type:$('#p-type').value,description:$('#p-desc').value.trim(),twitter:$('#p-x').value.trim(),discord:$('#p-dc').value.trim()})});
+  if(r.error) return toast(r.error);
+  toast('✅ Project created'); $('#project-form').style.display='none'; $('#p-name').value='';$('#p-desc').value='';$('#p-x').value='';$('#p-dc').value=''; load();
+};
+
+load();
 </script>
 </body>
 </html>

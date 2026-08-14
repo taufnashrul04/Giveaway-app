@@ -4,213 +4,181 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project — GiveFuel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b0e14; --card:#141a26; --border:#232c3d; --text:#e6ebf4; --muted:#8b95a8; --accent:#4f7cff; --accent2:#7c5cff; --green:#2ecc71; --red:#e74c3c; }
+  :root {
+    --bg:#08090a; --panel:#0f1011; --surface:#191a1b;
+    --text:#f7f8f8; --text2:#d0d6e0; --text3:#8a8f98; --text4:#62666d;
+    --accent:#5e6ad2; --accent2:#7170ff; --accent3:#828fff;
+    --green:#27a644; --red:#e5484d; --amber:#f5a524;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.05);
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-  .wrap { max-width:1000px; margin:0 auto; padding:24px 16px; }
-  header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:24px; }
-  .logo { font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-right:auto; }
-  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:.15s; }
-  .btn:hover { border-color:var(--accent); }
-  .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none; color:#fff; }
-  .btn.ghost { background:transparent; }
-  .btn.sm { padding:6px 12px; font-size:13px; }
-  .badge { font-size:12px; padding:3px 10px; border-radius:20px; background:var(--card); border:1px solid var(--border); color:var(--muted); }
-  .badge.green { color:var(--green); border-color:var(--green); }
-  .badge.accent { color:var(--accent); border-color:var(--accent); }
-  .badge.red { color:var(--red); border-color:var(--red); }
-  .badge.purple { color:var(--accent2); border-color:var(--accent2); }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:14px; }
-  .card h3 { font-size:17px; margin-bottom:6px; }
-  .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .form { display:grid; gap:12px; margin-top:14px; }
-  .form label { font-size:13px; color:var(--muted); }
-  .form input,.form textarea,.form select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:14px; }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:10px; background:var(--card); border:1px solid var(--accent); font-size:14px; z-index:99; display:none; }
-  .toast.show { display:block; }
-  .muted { color:var(--muted); }
-  .proj-hero { border:1px solid var(--border); border-radius:16px; padding:24px; background:linear-gradient(135deg,rgba(124,92,255,.1),rgba(79,124,255,.1)); margin-bottom:20px; }
-  .tasks { font-size:13px; color:var(--muted); margin-bottom:12px; }
-  .tasks li { margin-left:16px; }
-  details { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:20px; }
-  summary { cursor:pointer; font-weight:700; }
+  body { font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-feature-settings:'cv01','ss03'; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  .nav { position:sticky; top:0; z-index:50; background:rgba(8,9,10,0.8); backdrop-filter:blur(12px); border-bottom:1px solid var(--border2); }
+  .nav-in { max-width:1000px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px; color:var(--text); text-decoration:none; }
+  .brand svg { width:22px; height:22px; }
+  .nav-links { display:flex; gap:8px; align-items:center; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:none; border-radius:6px; cursor:pointer; font-family:inherit; font-weight:500; text-decoration:none; transition:all .15s; }
+  .btn-primary { background:var(--accent); color:#fff; padding:10px 18px; font-size:14px; }
+  .btn-primary:hover { background:var(--accent3); }
+  .btn-ghost { background:rgba(255,255,255,0.02); color:var(--text2); padding:8px 14px; font-size:13.5px; border:1px solid var(--border); }
+  .btn-ghost:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+  .btn-sm { padding:6px 12px; font-size:13px; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 24px 64px; }
+  .hero { background:rgba(94,106,210,0.07); border:1px solid rgba(94,106,210,0.2); border-radius:16px; padding:32px; margin-bottom:24px; }
+  .hero .type { color:var(--accent3); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
+  .hero h1 { font-size:32px; font-weight:600; letter-spacing:-0.7px; }
+  .hero .desc { color:var(--text2); margin-top:10px; line-height:1.6; }
+  .hero .links { display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; }
+  .hero .stat { color:var(--text3); font-size:13.5px; margin-top:14px; }
+  .card { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:14px; padding:22px; margin-bottom:16px; }
+  .h2 { font-size:17px; font-weight:600; letter-spacing:-0.2px; margin-bottom:16px; }
+  .lbl { display:block; font-size:12px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+  .inp { width:100%; background:#0d0e10; border:1px solid var(--border); color:var(--text); padding:11px 13px; border-radius:6px; font-size:14px; outline:none; font-family:inherit; margin-bottom:14px; }
+  .inp:focus { border-color:var(--accent2); }
+  textarea.inp { resize:vertical; min-height:70px; }
+  .row2 { display:flex; gap:12px; } .row2 > div { flex:1; }
+  .task-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .task-row select { background:#0d0e10; border:1px solid var(--border); color:var(--text); padding:9px 10px; border-radius:6px; font-size:13px; outline:none; font-family:inherit; }
+  .task-row input { flex:1; background:#0d0e10; border:1px solid var(--border); color:var(--text); padding:9px 12px; border-radius:6px; font-size:13px; outline:none; font-family:inherit; }
+  .task-row .del { background:transparent; border:1px solid var(--border); color:var(--text3); width:34px; height:34px; border-radius:6px; cursor:pointer; }
+  .list { display:flex; flex-direction:column; gap:12px; }
+  .item { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:18px; }
+  .item h3 { font-size:16px; font-weight:600; }
+  .item .meta { color:var(--text3); font-size:13px; margin:4px 0 8px; }
+  .item .prize { color:var(--accent3); font-weight:600; font-size:14.5px; margin-bottom:8px; }
+  .tasks { list-style:none; display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+  .tasks li { font-size:13px; color:var(--text2); display:flex; align-items:center; gap:7px; }
+  .tasks li::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--text4); }
+  .status { display:inline-flex; font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; }
+  .status.open { background:rgba(39,166,68,0.12); color:var(--green); }
+  .status.drawn { background:rgba(94,106,210,0.15); color:var(--accent3); }
+  .status.closed { background:rgba(255,255,255,0.06); color:var(--text3); }
+  .empty { color:var(--text4); font-size:14px; text-align:center; padding:32px 0; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:12px 20px; border-radius:8px; font-size:14px; opacity:0; transition:opacity .3s; z-index:100; }
+  @media (max-width:600px){ .hero h1{font-size:24px} .row2{flex-direction:column} }
 </style>
 </head>
 <body>
+<nav class="nav"><div class="nav-in">
+  <a class="brand" href="/"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="4" fill="#5e6ad2"/><path d="M8 10h8M8 14h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>GiveFuel</a>
+  <div class="nav-links"><a href="/" class="btn btn-ghost btn-sm">Home</a><a href="/dashboard.html" class="btn btn-ghost btn-sm">Dashboard</a></div>
+</div></nav>
+
 <div class="wrap">
-  <header>
-    <a class="logo" href="/" style="text-decoration:none">⛽ GiveFuel</a>
-    <a class="btn sm" href="/">← Feed</a>
-    <a class="btn sm" href="/dashboard.html">Dashboard</a>
-  </header>
-
-  <div id="proj-hero"></div>
-
-  <!-- Create giveaway (for members) -->
-  <details id="create-gw">
-    <summary>🎁 Buat Giveaway baru</summary>
-    <div class="form">
-      <div><label>Judul *</label><input id="g-title" placeholder="e.g. WL Giveaway — 5 pemenang"></div>
-      <div><label>Deskripsi</label><textarea id="g-desc" placeholder="Detail hadiah, aturan..."></textarea></div>
-      <div><label>Hadiah / Prize</label><input id="g-prize" placeholder="e.g. 1 NFT WL + 500 USDC"></div>
-      <div class="row">
-        <div style="flex:1"><label>Jumlah pemenang</label><input id="g-winners" type="number" value="1" min="1"></div>
-      </div>
-      <div style="border:1px solid var(--border);border-radius:10px;padding:10px">
-        <label style="margin-bottom:6px;display:block"><strong>➕ Task (wajib dipenuhi user)</strong> — samakan kayak Alphabot/Atlas</label>
-        <div id="g-tasks"></div>
-        <button type="button" class="btn sm" id="btn-addtask" style="margin-top:8px">+ Tambah Task</button>
-      </div>
-      <div><button class="btn primary" id="btn-create">Buat Giveaway</button></div>
+  <div id="load" style="color:var(--text3);text-align:center;padding:60px 0">Loading project…</div>
+  <div id="main" style="display:none">
+    <div class="hero" id="hero">
+      <div class="type" id="p-type"></div>
+      <h1 id="p-name"></h1>
+      <div class="desc" id="p-desc"></div>
+      <div class="links" id="p-links"></div>
+      <div class="stat" id="p-stat"></div>
     </div>
-  </details>
 
-  <h2 class="meta" style="margin:20px 0 12px">Giveaways Project Ini</h2>
-  <div id="gw-list"><p class="muted">Loading...</p></div>
+    <div class="card">
+      <div class="h2">Create a giveaway</div>
+      <div class="lbl">Title *</div><input class="inp" id="g-title" placeholder="e.g. WL Giveaway — 5 winners">
+      <div class="lbl">Description</div><textarea class="inp" id="g-desc" placeholder="Prize details, rules, timeline…"></textarea>
+      <div class="lbl">Prize</div><input class="inp" id="g-prize" placeholder="e.g. 1 NFT WL + 500 USDC">
+      <div class="row2">
+        <div><div class="lbl">Number of winners</div><input class="inp" id="g-winners" type="number" value="1" min="1"></div>
+        <div><div class="lbl">Ends at (optional)</div><input class="inp" id="g-ends" type="date"></div>
+      </div>
+      <div class="lbl">Requirements (tasks)</div>
+      <div id="g-tasks"></div>
+      <button class="btn btn-ghost btn-sm" id="btn-addtask" style="margin-bottom:16px">+ Add task</button>
+      <button class="btn btn-primary" id="btn-create" style="width:100%">Create giveaway</button>
+    </div>
+
+    <div class="card">
+      <div class="h2">Giveaways in this project</div>
+      <div id="gw-list" class="list"></div>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-const $ = s => document.querySelector(s);
-const PROJECT_ID = new URLSearchParams(location.search).get('id');
-let me = null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PROJECT_ID=new URLSearchParams(location.search).get('id');
+let ME=null;
+function toast(m){const t=$('#toast');t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,2800);}
+async function api(path,opts){const r=await fetch(path,opts);return r.json();}
 
-function esc(s) { const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
-function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
-function statusBadge(s){ return s==='open'?'<span class="badge green">OPEN</span>':s==='drawn'?'<span class="badge accent">DRAWN</span>':'<span class="badge red">CLOSED</span>'; }
-
-async function loadMe(){
-  const r = await fetch('/api/me'); me = await r.json();
-}
-
-async function loadProject(){
-  const r = await fetch('/api/projects/'+PROJECT_ID);
-  if(r.status===404){ $('#proj-hero').innerHTML='<p>Project tidak ditemukan.</p>'; return; }
-  const p = await r.json();
-  $('#proj-hero').innerHTML = `
-    <div class="row" style="justify-content:space-between">
-      <h1>${esc(p.name)}</h1><span class="badge purple">${esc(p.type)}</span>
-    </div>
-    <p class="meta" style="margin-top:8px">${p.giveaways.length} giveaways · ${p.members.length} members</p>
-    ${p.description?'<p style="margin:8px 0">'+esc(p.description)+'</p>':''}
-    <div class="row" style="margin-top:12px">
-      ${p.website?'<a class="btn sm" href="'+esc(p.website)+'" target="_blank">🌐 Website</a>':''}
-      ${p.twitter?'<a class="btn sm" href="https://x.com/'+esc(p.twitter.replace('@',''))+'" target="_blank">𝕏 '+esc(p.twitter)+'</a>':''}
-    </div>`;
-  // members
-  const list = $('#gw-list');
-  list.innerHTML='';
-  if(!p.giveaways.length) list.innerHTML='<p class="muted">Belum ada giveaway di project ini.</p>';
-  for(const g of p.giveaways){
-    let tasks=[];
-    try{ tasks=JSON.parse(g.tasks||'[]'); }catch(e){}
-    if(!tasks.length){
-      if(g.require_x_follow)tasks.push({type:'follow_x',target:g.require_x_follow});
-      if(g.require_x_repost)tasks.push({type:'repost_x',target:g.require_x_repost});
-      if(g.require_dc_guild)tasks.push({type:'join_dc',target:g.require_dc_guild});
-    }
-    const taskLabels=tasks.map(t=>{
-      switch(t.type){
-        case 'follow_x':return 'Follow @'+(t.target||'').replace(/^@/,'')+' di X';
-        case 'like_x':return 'Like postingan X';
-        case 'repost_x':return 'Repost postingan X';
-        case 'join_dc':return 'Join Discord server';
-        case 'connect_x':return 'Connect akun X';
-        case 'connect_dc':return 'Connect akun Discord';
-        default:return t.label||'Task';
-      }
-    });
-    if(!taskLabels.length)taskLabels.push('Tidak ada tugas');
-    const el=document.createElement('div'); el.className='card';
-    el.innerHTML=`
-      <div class="row" style="justify-content:space-between"><h3>${esc(g.title)}</h3>${statusBadge(g.status)}</div>
-      <div class="meta">${g.entry_count} entries</div>
-      ${g.prize?'<div style="color:var(--accent);font-weight:700;margin-bottom:8px">'+esc(g.prize)+'</div>':''}
-      <ul class="tasks">${taskLabels.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul>
-      <div class="row"><button class="btn sm primary" data-enter="${g.id}">Ikut</button></div>`;
-    list.appendChild(el);
-    el.querySelector('[data-enter]').onclick=()=>enter(g.id);
-  }
-  // show create form only if member
-  const isMember = me && p.members.some(m=> me.dc_user_id && (m.x_username||m.dc_username));
-  // simpler: anyone logged in who created or member — backend enforces; just show form
-  $('#create-gw').style.display = me ? 'block' : 'none';
-}
-
-async function enter(id){
-  if(!me){ toast('Login Discord dulu'); return; }
-  const r=await fetch('/api/giveaways/'+id+'/enter',{method:'POST'});
-  const d=await r.json();
-  if(d.error) return toast(d.error);
-  if(d.verified) toast('✅ Ikut & verified!');
-  else toast('Masuk, tapi tugas belum lengkap.');
-  loadProject();
-}
-
-$('#btn-create').onclick=async()=>{
-  if(!me) return toast('Login dulu');
-  const title=$('#g-title').value.trim();
-  if(!title) return toast('Judul wajib');
-  // collect tasks
-  const tasks=[];
-  document.querySelectorAll('.task-row').forEach(row=>{
-    const type=row.querySelector('.task-type').value;
-    const target=row.querySelector('.task-target').value.trim();
-    if(type==='connect_x'||type==='connect_dc'){
-      if($('#t-'+type).checked) tasks.push({type});
-      return;
-    }
-    if(!target) return;
-    tasks.push({type, target});
-  });
-  const body={ title, description:$('#g-desc').value.trim(), prize:$('#g-prize').value.trim(),
-    winners_count:parseInt($('#g-winners').value)||1, tasks };
-  const r=await fetch('/api/projects/'+PROJECT_ID+'/giveaways',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const d=await r.json();
-  if(d.error) return toast(d.error);
-  toast('✅ Giveaway dibuat!');
-  $('#g-title').value='';$('#g-desc').value='';$('#g-prize').value='';
-  $('#g-tasks').innerHTML='';
-  loadProject();
-};
-
-// ---- Dynamic task builder ----
 const TASK_TYPES=[
   {value:'follow_x',label:'Follow X @',placeholder:'@handle'},
-  {value:'like_x',label:'Like post X',placeholder:'https://x.com/.../status/ID'},
-  {value:'repost_x',label:'Repost post X',placeholder:'https://x.com/.../status/ID'},
+  {value:'like_x',label:'Like post on X',placeholder:'https://x.com/.../status/ID'},
+  {value:'repost_x',label:'Repost post on X',placeholder:'https://x.com/.../status/ID'},
   {value:'join_dc',label:'Join Discord (guild id)',placeholder:'123456789012345678'},
-  {value:'connect_x',label:'Connect akun X (tidak perlu target)',placeholder:'',toggle:true},
-  {value:'connect_dc',label:'Connect akun Discord (tidak perlu target)',placeholder:'',toggle:true},
+  {value:'connect_x',label:'Connect X account',placeholder:'',toggle:true},
+  {value:'connect_dc',label:'Connect Discord account',placeholder:'',toggle:true},
 ];
 function addTaskRow(prefill){
-  const wrap=document.createElement('div');
-  wrap.className='task-row';
-  wrap.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:6px';
-  wrap.innerHTML=`<select class="task-type" style="width:220px">${TASK_TYPES.map(t=>`<option value="${t.value}">${t.label}</option>`).join('')}</select>
-    <input class="task-target" style="flex:1" placeholder="target/URL">
-    <button type="button" class="btn sm ghost task-del">✕</button>`;
+  const wrap=document.createElement('div'); wrap.className='task-row';
+  wrap.innerHTML=`<select class="task-type">${TASK_TYPES.map(t=>`<option value="${t.value}">${t.label}</option>`).join('')}</select>
+    <input class="task-target" placeholder="target / URL">
+    <button type="button" class="del">✕</button>`;
   if(prefill){ wrap.querySelector('.task-type').value=prefill.type; wrap.querySelector('.task-target').value=prefill.target||''; }
-  // checkbox tasks (connect_x/dc) — replace target input with checkbox
-  const updateInput=()=>{
-    const t=wrap.querySelector('.task-type').value;
-    const ttype=TASK_TYPES.find(x=>x.value===t);
-    if(ttype&&ttype.toggle){
-      wrap.querySelector('.task-target').outerHTML='<input type="checkbox" class="task-target" id="t-'+t+'" checked title="wajib">';
-    } else if(wrap.querySelector('.task-target').type==='checkbox'){
-      wrap.querySelector('.task-target').outerHTML='<input class="task-target" style="flex:1" placeholder="target/URL">';
-    }
-  };
-  wrap.querySelector('.task-type').onchange=updateInput;
-  wrap.querySelector('.task-del').onclick=()=>wrap.remove();
-  updateInput();
+  const update=()=>{ const t=TASK_TYPES.find(x=>x.value===wrap.querySelector('.task-type').value); if(t&&t.toggle){ wrap.querySelector('.task-target').style.display='none'; } else wrap.querySelector('.task-target').style.display=''; };
+  wrap.querySelector('.task-type').onchange=update;
+  wrap.querySelector('.del').onclick=()=>wrap.remove();
+  update();
   $('#g-tasks').appendChild(wrap);
 }
 $('#btn-addtask').onclick=()=>addTaskRow();
 
-loadMe().then(loadProject);
+async function loadProject(){
+  const p=await api('/api/projects/'+PROJECT_ID);
+  if(p.error){ $('#load').innerHTML='<p style="text-align:center">'+esc(p.error)+'</p>'; return; }
+  $('#main').style.display='block'; $('#load').style.display='none';
+  $('#p-type').textContent=p.type||'community';
+  $('#p-name').textContent=p.name;
+  $('#p-desc').textContent=p.description||'';
+  const links=$('#p-links'); links.innerHTML='';
+  if(p.twitter) links.innerHTML+=`<a class="btn btn-ghost btn-sm" href="https://x.com/${esc(p.twitter)}" target="_blank" rel="noopener">X ↗</a>`;
+  if(p.discord) links.innerHTML+=`<a class="btn btn-ghost btn-sm" href="${esc(p.discord)}" target="_blank" rel="noopener">Discord ↗</a>`;
+  if(p.website) links.innerHTML+=`<a class="btn btn-ghost btn-sm" href="${esc(p.website)}" target="_blank" rel="noopener">Website ↗</a>`;
+  $('#p-stat').textContent=`${p.member_count||0} members · ${p.giveaway_count||0} giveaways`;
+
+  const list=$('#gw-list'); list.innerHTML='';
+  if(!(p.giveaways||[]).length) list.innerHTML='<div class="empty">No giveaways yet — create the first one above.</div>';
+  (p.giveaways||[]).forEach(g=>{
+    let tasks=[]; try{tasks=JSON.parse(g.tasks||'[]');}catch(e){}
+    if(!tasks.length){ if(g.require_x_follow)tasks.push({type:'follow_x',target:g.require_x_follow}); if(g.require_dc_guild)tasks.push({type:'join_dc',target:g.require_dc_guild}); }
+    const labels=tasks.map(t=>{ switch(t.type){ case 'follow_x': return 'Follow @'+(String(t.target).match(/x\.com\/([A-Za-z0-9_]+)/i)||[])[1]||t.target; case 'like_x': return 'Like the post'; case 'repost_x': return 'Repost the post'; case 'join_dc': return 'Join Discord'; case 'connect_x': return 'Connect X'; case 'connect_dc': return 'Connect Discord'; default: return t.label||'Task'; } });
+    const el=document.createElement('div'); el.className='item';
+    el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><h3>${esc(g.title)}</h3><span class="status ${g.status}">${g.status==='open'?'Open':g.status==='drawn'?'Drawn':'Closed'}</span></div>
+      <div class="meta">${g.entry_count} entries</div>
+      ${g.prize?`<div class="prize">${esc(g.prize)}</div>`:''}
+      <ul class="tasks">${labels.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>
+      <a class="btn btn-ghost btn-sm" href="/giveaway.html?id=${g.id}">View giveaway</a>`;
+    list.appendChild(el);
+  });
+}
+
+$('#btn-create').onclick=async()=>{
+  if(!ME||!ME.id) return toast('Please sign in first');
+  const title=$('#g-title').value.trim(); if(!title) return toast('Title is required');
+  const tasks=[];
+  document.querySelectorAll('.task-row').forEach(row=>{
+    const type=row.querySelector('.task-type').value;
+    const target=row.querySelector('.task-target').value.trim();
+    if(type==='connect_x'||type==='connect_dc'){ tasks.push({type}); return; }
+    if(!target) return; tasks.push({type,target});
+  });
+  const body={title,description:$('#g-desc').value.trim(),prize:$('#g-prize').value.trim(),winners_count:parseInt($('#g-winners').value)||1,ends_at:$('#g-ends').value||null,tasks};
+  const r=await api('/api/projects/'+PROJECT_ID+'/giveaways',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.error) return toast(r.error);
+  toast('✅ Giveaway created!'); $('#g-title').value='';$('#g-desc').value='';$('#g-prize').value='';$('#g-tasks').innerHTML='';
+  loadProject();
+};
+
+(async()=>{ const me=await api('/api/me'); ME=me; loadProject(); })();
 </script>
 </body>
 </html>
