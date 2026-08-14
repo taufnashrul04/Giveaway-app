@@ -109,20 +109,22 @@ client.on('interactionCreate', async (i) => {
   if (i.isButton() && i.customId.startsWith('join_gw:')) {
     try {
       const id = parseInt(i.customId.split(':')[1]);
+      // Discord interaction must respond within 3s; real verify takes 30-40s.
+      // Defer first (acknowledge), then edit with the result when done.
+      await i.deferReply({ ephemeral: true });
+      await i.editReply({ content: '⏳ Memeriksa task... (verifikasi follow real bisa ~30 detik)' });
       const out = await processJoin(i.user.id, i.user.username, id);
       if (out.ok === true) {
-        return i.reply({ content: out.message, ephemeral: true });
+        return i.editReply({ content: out.message });
       }
       // incomplete → bawa ke web utk login + connect X + join.
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setLabel('🔗 Login & Connect X & Join').setStyle(ButtonStyle.Link).setURL(`${BASE_URL}/giveaway.html?id=${id}`)
       );
-      // NOTE: use reply (NOT update) — update() edits the original giveaway post
-      // and destroys the embed. reply() keeps the embed intact + sends a fresh message.
-      return i.reply({ content: out.message + '\n\nKlik tombol di bawah, login Discord, connect X, lalu klik **Ikut Giveaway**.', components: [row], ephemeral: true });
+      return i.editReply({ content: out.message + '\n\nKlik tombol di bawah, login Discord, connect X, lalu klik **Ikut Giveaway**.', components: [row] });
     } catch (e) {
       console.error('button error:', e);
-      return i.reply({ content: 'Terjadi error: ' + e.message, ephemeral: true }).catch(()=>{});
+      return i.editReply({ content: 'Terjadi error: ' + e.message }).catch(()=>{});
     }
   }
   if (!i.isChatInputCommand()) return;
@@ -146,8 +148,11 @@ client.on('interactionCreate', async (i) => {
     }
     if (i.commandName === 'join') {
       const id = parseInt(i.options.getString('id'));
+      await i.deferReply({ ephemeral: true });
+      await i.editReply({ content: '⏳ Memeriksa task... (verifikasi follow real bisa ~30 detik)' });
       const out = await processJoin(i.user.id, i.user.username, id);
-      return i.reply({ content: out.message, ephemeral: out.ok !== false });
+      await i.editReply({ content: out.message });
+      return;
     }
   } catch (e) {
     console.error('interaction error:', e);
