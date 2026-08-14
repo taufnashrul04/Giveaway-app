@@ -92,6 +92,25 @@ function taskLabel(t) {
 }
 
 client.on('interactionCreate', async (i) => {
+  // Handle BUTTON interactions first (Join Giveaway button) — these are NOT
+  // chat input commands, so the guard below must not swallow them.
+  if (i.isButton() && i.customId.startsWith('join_gw:')) {
+    try {
+      const id = parseInt(i.customId.split(':')[1]);
+      const out = await processJoin(i.user.id, i.user.username, id);
+      if (out.ok === true) {
+        return i.reply({ content: out.message, ephemeral: true });
+      }
+      // incomplete → selesaikan task via web (butuh connect X). Kasih link tombol.
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setLabel('🍀 Lanjut Join di Web').setStyle(ButtonStyle.Link).setURL(`${BASE_URL}/?giveaway=${id}`)
+      );
+      return i.update({ content: out.message, components: [row], embeds: [] });
+    } catch (e) {
+      console.error('button error:', e);
+      return i.reply({ content: 'Terjadi error: ' + e.message, ephemeral: true }).catch(()=>{});
+    }
+  }
   if (!i.isChatInputCommand()) return;
   try {
     if (i.commandName === 'giveaways') {
@@ -115,18 +134,6 @@ client.on('interactionCreate', async (i) => {
       const id = parseInt(i.options.getString('id'));
       const out = await processJoin(i.user.id, i.user.username, id);
       return i.reply({ content: out.message, ephemeral: out.ok !== false });
-    }
-    if (i.isButton() && i.customId.startsWith('join_gw:')) {
-      const id = parseInt(i.customId.split(':')[1]);
-      const out = await processJoin(i.user.id, i.user.username, id);
-      if (out.ok === true) {
-        return i.reply({ content: out.message, ephemeral: true });
-      }
-      // incomplete → BHARUS selesaikan task via web (butuh connect X). Kasih link tombol.
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setLabel('🍀 Lanjut Join di Web').setStyle(ButtonStyle.Link).setURL(`${BASE_URL}/?giveaway=${id}`)
-      );
-      return i.update({ content: out.message, components: [row], embeds: [] });
     }
   } catch (e) {
     console.error('interaction error:', e);
