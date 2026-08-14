@@ -198,6 +198,10 @@ async function initSchema() {
     if (!cols.some(c => c.name === 'wallet')) {
       await execute({ sql: 'ALTER TABLE users ADD COLUMN wallet TEXT' });
     }
+    // wallet_chain: 'evm' | 'sol'
+    if (!cols.some(c => c.name === 'wallet_chain')) {
+      await execute({ sql: 'ALTER TABLE users ADD COLUMN wallet_chain TEXT' });
+    }
   } catch (e) { /* ignore */ }
   // migration: giveaways.project_id
   try {
@@ -211,6 +215,10 @@ async function initSchema() {
     const gcols2 = await db.all('PRAGMA table_info(giveaways)');
     if (!gcols2.some(c => c.name === 'tasks')) {
       await execute({ sql: 'ALTER TABLE giveaways ADD COLUMN tasks TEXT' });
+    }
+    // chain: 'evm' | 'sol' — chain utk hadiah/airdrop
+    if (!gcols2.some(c => c.name === 'chain')) {
+      await execute({ sql: 'ALTER TABLE giveaways ADD COLUMN chain TEXT' });
     }
   } catch (e) { /* ignore */ }
 }

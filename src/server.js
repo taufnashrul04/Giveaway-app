@@ -228,14 +228,26 @@ app.get('/api/me', async (req, res) => {
   res.json(u ? {
     id: u.id, x_username: u.x_username, dc_username: u.dc_username,
     dc_user_id: u.dc_user_id, dc_guilds: JSON.parse(u.dc_guilds || '[]'), wallet: u.wallet || '',
+    wallet_chain: u.wallet_chain || '',
   } : null);
 });
+
+// Validate wallet address by chain. evm = 0x + 40 hex; sol = base58 32-44 chars.
+function validWallet(wallet, chain) {
+  const w = (wallet || '').trim();
+  if (!w) return false;
+  if (chain === 'evm') return /^0x[0-9a-fA-F]{40}$/.test(w);
+  if (chain === 'sol') return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(w);
+  return false;
+}
 
 app.post('/api/me/wallet', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'login first' });
   const wallet = (req.body.wallet || '').trim();
-  await db.run('UPDATE users SET wallet=? WHERE id=?', [wallet, req.session.userId]);
-  res.json({ ok: true, wallet });
+  const chain = (req.body.chain || '').toLowerCase() === 'sol' ? 'sol' : 'evm';
+  if (!validWallet(wallet, chain)) return res.status(400).json({ error: chain === 'evm' ? 'Invalid EVM address (need 0x + 40 hex)' : 'Invalid Solana address' });
+  await db.run('UPDATE users SET wallet=?, wallet_chain=? WHERE id=?', [wallet, chain, req.session.userId]);
+  res.json({ ok: true, wallet, chain });
 });
 
 app.get('/api/dashboard', async (req, res) => {
@@ -401,21 +413,22 @@ app.get('/api/giveaways/:id/participants', async (req, res) => {
 
 app.post('/api/giveaways', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'login first' });
-  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild, tasks } = req.body;
+  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild, tasks, chain } = req.body;
   if (!title) return res.status(400).json({ error: 'title required' });
   // normalize tasks array; also derive legacy columns from tasks for compatibility
   const taskList = Array.isArray(tasks) && tasks.length ? tasks : [];
   const tasksJson = JSON.stringify(taskList);
+  const chainVal = (chain || 'evm').toLowerCase() === 'sol' ? 'sol' : 'evm';
   // derive legacy fields if not explicitly given
   const xFollow = require_x_follow || (taskList.find(t => t.type === 'follow_x') || {}).target || null;
   const dcg = require_dc_guild || (taskList.find(t => t.type === 'join_dc') || {}).target || null;
   const r = await db.run(`INSERT INTO giveaways
-    (created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild,tasks)
-    VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    (created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild,tasks,chain)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
     [req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null,
-      xFollow, require_x_repost || null, dcg, tasksJson]);
+      xFollow, require_x_repost || null, dcg, tasksJson, chainVal]);
   notifyBotGiveaway({ id: r.lastInsertRowid, title, prize, description, host: null, pn: null });
-  res.json({ id: r.lastInsertRowid, ok: true });
+  res.json({ id: r.lastInsertRowid, ok: true, chain: chainVal });
 });
 
 app.post('/api/giveaways/:id/enter', async (req, res) => {
@@ -541,19 +554,20 @@ app.post('/api/projects/:id/giveaways', async (req, res) => {
   if (!p) return res.status(404).json({ error: 'not found' });
   const isMember = await db.get('SELECT * FROM project_members WHERE project_id=? AND user_id=?', [p.id, req.session.userId]);
   if (!isMember) return res.status(403).json({ error: 'not a member of this project' });
-  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild, tasks } = req.body;
+  const { title, description, prize, winners_count, ends_at, require_x_follow, require_x_repost, require_dc_guild, tasks, chain } = req.body;
   if (!title) return res.status(400).json({ error: 'title required' });
   const taskList = Array.isArray(tasks) && tasks.length ? tasks : [];
   const tasksJson = JSON.stringify(taskList);
+  const chainVal = (chain || 'evm').toLowerCase() === 'sol' ? 'sol' : 'evm';
   const xFollow = require_x_follow || (taskList.find(t => t.type === 'follow_x') || {}).target || null;
   const dcg = require_dc_guild || (taskList.find(t => t.type === 'join_dc') || {}).target || null;
   const r = await db.run(`INSERT INTO giveaways
-    (project_id,created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild,tasks)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    (project_id,created_by,title,description,prize,winners_count,ends_at,require_x_follow,require_x_repost,require_dc_guild,tasks,chain)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
     [p.id, req.session.userId, title, description || '', prize || '', parseInt(winners_count) || 1, ends_at || null,
-      xFollow, require_x_repost || null, dcg, tasksJson]);
+      xFollow, require_x_repost || null, dcg, tasksJson, chainVal]);
   notifyBotGiveaway({ id: r.lastInsertRowid, title, prize, description, host: null, pn: p.name });
-  res.json({ id: r.lastInsertRowid, ok: true });
+  res.json({ id: r.lastInsertRowid, ok: true, chain: chainVal });
 });
 
 app.post('/api/logout', (req, res) => req.session.destroy(() => res.json({ ok: true })));

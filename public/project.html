@@ -86,6 +86,11 @@
       <div class="lbl">Prize</div><input class="inp" id="g-prize" placeholder="e.g. 1 NFT WL + 500 USDC">
       <div class="row2">
         <div><div class="lbl">Number of winners</div><input class="inp" id="g-winners" type="number" value="1" min="1"></div>
+        <div><div class="lbl">Prize chain</div>
+          <select class="inp" id="g-chain"><option value="evm">EVM</option><option value="sol">Solana</option></select>
+        </div>
+      </div>
+      <div class="row2">
         <div><div class="lbl">Ends at (optional)</div><input class="inp" id="g-ends" type="date"></div>
       </div>
       <div class="lbl">Requirements (tasks)</div>
@@ -171,7 +176,7 @@ $('#btn-create').onclick=async()=>{
     if(type==='connect_x'||type==='connect_dc'){ tasks.push({type}); return; }
     if(!target) return; tasks.push({type,target});
   });
-  const body={title,description:$('#g-desc').value.trim(),prize:$('#g-prize').value.trim(),winners_count:parseInt($('#g-winners').value)||1,ends_at:$('#g-ends').value||null,tasks};
+  const body={title,description:$('#g-desc').value.trim(),prize:$('#g-prize').value.trim(),winners_count:parseInt($('#g-winners').value)||1,ends_at:$('#g-ends').value||null,chain:$('#g-chain').value,tasks};
   const r=await api('/api/projects/'+PROJECT_ID+'/giveaways',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(r.error) return toast(r.error);
   toast('✅ Giveaway created!'); $('#g-title').value='';$('#g-desc').value='';$('#g-prize').value='';$('#g-tasks').innerHTML='';

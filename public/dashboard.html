@@ -66,6 +66,7 @@
   <div class="nav-links">
     <a href="/" class="btn btn-ghost btn-sm">Home</a>
     <span id="userlabel" style="color:var(--text3);font-size:13px"></span>
+    <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
   </div>
 </div></nav>
 
@@ -88,8 +89,15 @@
           <span id="x-tag" class="tag off">Off</span>
         </div>
         <div class="lbl" style="margin-top:16px">Wallet address</div>
-        <input class="inp" id="wallet" placeholder="0x… or your EVM address" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select class="inp" id="wallet-chain" style="flex:1;margin-bottom:0">
+            <option value="evm">EVM (0x…)</option>
+            <option value="sol">Solana</option>
+          </select>
+        </div>
+        <input class="inp" id="wallet" placeholder="Address for this chain" style="margin-bottom:8px">
         <button class="btn btn-primary" id="btn-wallet" style="width:100%">Save wallet</button>
+        <div id="wallet-status" style="color:var(--text3);font-size:13px;margin-top:8px"></div>
       </div>
 
       <!-- Projects -->
@@ -135,7 +143,8 @@ async function load(){
   // connections
   if(me.dc_user_id){ $('#dc-name').textContent=me.dc_username; $('#dc-tag').className='tag ok'; $('#dc-tag').textContent='Connected'; }
   if(me.x_username){ $('#x-name').textContent='@'+me.x_username; $('#x-tag').className='tag ok'; $('#x-tag').textContent='Connected'; }
-  $('#wallet').value = me.wallet || '';
+  if(me.wallet && me.wallet_chain){ $('#wallet').value=me.wallet; $('#wallet-chain').value=me.wallet_chain; $('#wallet-status').textContent='Saved: '+me.wallet.slice(0,8)+'… ('+me.wallet_chain.toUpperCase()+')'; }
+  else $('#wallet-status').textContent='No wallet set yet — add EVM or Solana.';
 
   const d = await api('/api/dashboard');
   $('#s-hosted').textContent=(d.mine||[]).length;
@@ -169,9 +178,14 @@ async function load(){
 }
 
 $('#btn-wallet').onclick=async()=>{
-  const r=await api('/api/me/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet:$('#wallet').value.trim()})});
-  toast(r.ok?'Wallet saved':'Failed to save'); if(r.ok) load();
+  const wallet=$('#wallet').value.trim(), chain=$('#wallet-chain').value;
+  const valid = chain==='sol' ? /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet) : /^0x[0-9a-fA-F]{40}$/.test(wallet);
+  if(!valid) return toast(chain==='sol'?'Invalid Solana address':'Invalid EVM address (0x + 40 hex)');
+  const r=await api('/api/me/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet,chain})});
+  if(r.ok) toast('Wallet saved'); else toast(r.error||'Failed to save');
+  if(r.ok) load();
 };
+$('#btn-logout').onclick=async()=>{ await fetch('/api/logout',{method:'POST'}); location.href='/'; };
 $('#btn-addproject').onclick=()=>{ $('#project-form').style.display=$('#project-form').style.display==='none'?'block':'none'; };
 $('#btn-saveproject').onclick=async()=>{
   const name=$('#p-name').value.trim(); if(!name) return toast('Project name required');
