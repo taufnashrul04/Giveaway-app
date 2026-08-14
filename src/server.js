@@ -290,6 +290,24 @@ function getTasks(g) {
   return tasks;
 }
 
+// Cache hasil verifikasi X (twitter-cli ~40s → jangan hit ulang terus). TTL 10 min.
+const verifyCache = {
+  async get(key) {
+    try {
+      const r = await db.get('SELECT result, expires FROM verify_cache WHERE cache_key=?', [key]);
+      if (r && Number(r.expires) > Date.now()) return Boolean(r.result);
+      if (r) await db.run('DELETE FROM verify_cache WHERE cache_key=?', [key]);
+      return undefined;
+    } catch (e) { return undefined; }
+  },
+  async set(key, ok, ttlMs = 10 * 60 * 1000) {
+    try {
+      await db.run('INSERT INTO verify_cache (cache_key, result, expires) VALUES (?,?,?) ON CONFLICT(cache_key) DO UPDATE SET result=excluded.result, expires=excluded.expires',
+        [key, ok ? 1 : 0, Date.now() + ttlMs]);
+    } catch (e) { /* cache best-effort */ }
+  },
+};
+
 app.get('/api/giveaways/:id', async (req, res) => {
   const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
   if (!g) return res.status(404).json({ error: 'not found' });
@@ -307,7 +325,7 @@ app.get('/api/giveaways/:id/verify', async (req, res) => {
   const u = await currentUser(req);
   const { verifyTasks } = require('../lib/tasks');
   const tasks = getTasks(g);
-  const { results, verified } = await verifyTasks(tasks, u, X_VERIFY, xscrape);
+  const { results, verified } = await verifyTasks(tasks, u, X_VERIFY, xscrape, verifyCache);
   res.json({ tasks: results, verified });
 });
 
@@ -358,7 +376,7 @@ app.post('/api/giveaways/:id/enter', async (req, res) => {
   }
 
   const { verifyTasks } = require('../lib/tasks');
-  const { results, verified } = await verifyTasks(taskList, u, X_VERIFY, xscrape);
+  const { results, verified } = await verifyTasks(taskList, u, X_VERIFY, xscrape, verifyCache);
 
   const x_follow_ok = (results.find(t => t.type === 'follow_x') || {}).ok ?? !g.require_x_follow;
   const x_repost_ok = (results.find(t => t.type === 'repost_x') || {}).ok ?? !g.require_x_repost;

@@ -140,6 +140,12 @@ const SCHEMA = [
   require_dc_guild TEXT,
   tasks         TEXT
 )`,
+`CREATE TABLE IF NOT EXISTS verify_cache (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  cache_key TEXT UNIQUE,
+  result    INTEGER,
+  expires   INTEGER
+)`,
 `CREATE TABLE IF NOT EXISTS entries (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   giveaway_id  INTEGER NOT NULL REFERENCES giveaways(id) ON DELETE CASCADE,
