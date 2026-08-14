@@ -90,6 +90,42 @@ async function verifyXFollow(user, targetHandle) {
 }
 
 // ---------- AUTH ----------
+// Merge user `fromId` into `toId`: reassign ownership of their giveaways,
+// projects, entries, winners, then delete the orphaned user. Returns true on success.
+async function mergeUsers(fromId, toId) {
+  if (fromId === toId) return true;
+  const tables = [
+    ['giveaways', 'created_by'],
+    ['projects', 'created_by'],
+    ['entries', 'user_id'],
+    ['winners', 'user_id'],
+    ['project_members', 'user_id'],
+  ];
+  for (const [table, col] of tables) {
+    await db.run(`UPDATE ${table} SET ${col}=? WHERE ${col}=?`, [toId, fromId]);
+  }
+  // if fromId row still has dc/x data that toId lacks, carry it over
+  const from = await db.get('SELECT * FROM users WHERE id=?', [fromId]);
+  const to = await db.get('SELECT * FROM users WHERE id=?', [toId]);
+  if (from && to) {
+    const carry = {};
+    if (!to.x_user_id && from.x_user_id) carry.x_user_id = from.x_user_id;
+    if (!to.x_username && from.x_username) carry.x_username = from.x_username;
+    if (!to.x_access_token && from.x_access_token) carry.x_access_token = from.x_access_token;
+    if (!to.dc_user_id && from.dc_user_id) carry.dc_user_id = from.dc_user_id;
+    if (!to.dc_username && from.dc_username) carry.dc_username = from.dc_username;
+    if (!to.dc_access_token && from.dc_access_token) carry.dc_access_token = from.dc_access_token;
+    if (!to.dc_guilds && from.dc_guilds) carry.dc_guilds = from.dc_guilds;
+    if (!to.wallet && from.wallet) carry.wallet = from.wallet;
+    if (Object.keys(carry).length) {
+      const sets = Object.keys(carry).map(k => `${k}=?`).join(',');
+      await db.run(`UPDATE users SET ${sets} WHERE id=?`, [...Object.values(carry), toId]);
+    }
+  }
+  await db.run('DELETE FROM users WHERE id=?', [fromId]);
+  return true;
+}
+
 app.get('/auth/x/login', (req, res) => res.redirect(x.buildAuthorizeUrl(res)));
 app.get('/auth/x/callback', async (req, res) => {
   try {
@@ -99,7 +135,10 @@ app.get('/auth/x/callback', async (req, res) => {
     if (req.session.userId) {
       let existing = await db.get('SELECT * FROM users WHERE id=?', [req.session.userId]);
       if (existing) {
-        // If this X id belongs to a DIFFERENT user, that's a conflict — keep current user, just attach X login
+        // If this X id belongs to a DIFFERENT user, merge that user into current
+        // (avoids UNIQUE constraint on users.x_user_id).
+        const owner = await db.get('SELECT * FROM users WHERE x_user_id=? AND id<>?', [info.x_user_id, existing.id]);
+        if (owner) await mergeUsers(owner.id, existing.id);
         await db.run('UPDATE users SET x_user_id=?, x_username=?, x_access_token=? WHERE id=?', [info.x_user_id, info.x_username, info.x_access_token, existing.id]);
         return res.redirect('/?connected=x');
       }
@@ -119,6 +158,8 @@ app.get('/auth/x/mock', async (req, res) => {
   const info = await x.exchangeCode('testcode', 'mockstate');
   // If already logged in, link X to current user (don't swap session)
   if (req.session.userId) {
+    const owner = await db.get('SELECT * FROM users WHERE x_user_id=? AND id<>?', [info.x_user_id, req.session.userId]);
+    if (owner) await mergeUsers(owner.id, req.session.userId);
     await db.run('UPDATE users SET x_user_id=?, x_username=?, x_access_token=? WHERE id=?', [info.x_user_id, info.x_username, info.x_access_token, req.session.userId]);
     return res.redirect('/?connected=x');
   }

@@ -60,7 +60,7 @@ async function init() {
   await exec(`CREATE TABLE IF NOT EXISTS bot_announce (id INTEGER PRIMARY KEY AUTOINCREMENT, giveaway_id INTEGER, channel_id TEXT, announced_at TEXT DEFAULT (datetime('now')), UNIQUE(giveaway_id))`);
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once('ready', async () => {
   console.log(`✅ GiveFuel bot online as ${client.user.tag}`);
@@ -113,57 +113,77 @@ client.on('interactionCreate', async (i) => {
     }
     if (i.commandName === 'join') {
       const id = parseInt(i.options.getString('id'));
-      if (!id) return i.reply({ content: 'ID giveaway tidak valid.', ephemeral: true });
-      const g = (await all(`SELECT * FROM giveaways WHERE id=?`, [id]))[0];
-      if (!g) return i.reply({ content: 'Giveaway #' + id + ' tidak ditemukan.', ephemeral: true });
-      if (g.status !== 'open') return i.reply({ content: 'Giveaway #' + id + ' sudah ditutup.', ephemeral: true });
-      // find or create GiveFuel user for this discord id
-      let u = (await all(`SELECT * FROM users WHERE dc_user_id=?`, [i.user.id]))[0];
-      if (!u) {
-        const r = await run(`INSERT INTO users (dc_user_id, dc_username) VALUES (?,?)`, [i.user.id, i.user.username]);
-        u = { id: r.lastInsertRowid, dc_user_id: i.user.id, dc_username: i.user.username, x_username: null, dc_guilds: '[]' };
+      const out = await processJoin(i.user.id, i.user.username, id);
+      return i.reply({ content: out.message, ephemeral: out.ok !== false });
+    }
+    if (i.isButton() && i.customId.startsWith('join_gw:')) {
+      const id = parseInt(i.customId.split(':')[1]);
+      const out = await processJoin(i.user.id, i.user.username, id);
+      if (out.ok === true) {
+        return i.reply({ content: out.message, ephemeral: true });
       }
-      // parse tasks
-      let tasks = [];
-      try { tasks = JSON.parse(g.tasks || '[]'); } catch (e) {}
-      if (!tasks.length) {
-        if (g.require_x_follow) tasks.push({ type: 'follow_x', target: g.require_x_follow });
-        if (g.require_x_repost) tasks.push({ type: 'repost_x' });
-        if (g.require_dc_guild) tasks.push({ type: 'join_dc', target: g.require_dc_guild });
-      }
-      const results = [];
-      for (const t of tasks) {
-        if (t.type === 'connect_dc') { results.push({ ...t, ok: true }); continue; }
-        if (t.type === 'join_dc') { results.push({ ...t, ok: true }); continue; } // user IS here in the server
-        if (t.type === 'connect_x') { results.push({ ...t, ok: !!(u.x_username) }); continue; }
-        if (t.type === 'follow_x' || t.type === 'like_x' || t.type === 'repost_x') {
-          results.push({ ...t, ok: !!(u.x_username) }); // honor system
-          continue;
-        }
-        results.push({ ...t, ok: false });
-      }
-      const verified = results.every(r => r.ok);
-      const x_ok = (results.find(r => r.type === 'follow_x') || {}).ok ?? 1;
-      const xr_ok = (results.find(r => r.type === 'repost_x') || {}).ok ?? 1;
-      const dc_ok = (results.find(r => r.type === 'join_dc') || {}).ok ?? 1;
-      await run(`INSERT INTO entries (giveaway_id,user_id,x_follow_ok,x_repost_ok,dc_ok,verified)
-                 VALUES (?,?,?,?,?,?)
-                 ON CONFLICT(giveaway_id,user_id) DO UPDATE SET
-                   x_follow_ok=excluded.x_follow_ok, x_repost_ok=excluded.x_repost_ok,
-                   dc_ok=excluded.dc_ok, verified=excluded.verified`,
-        [g.id, u.id, x_ok ? 1 : 0, xr_ok ? 1 : 0, dc_ok ? 1 : 0, verified ? 1 : 0]);
-      if (verified) {
-        return i.reply({ content: `✅ Lo masuk giveaway **#${g.id} — ${g.title}**! Semua task terpenuhi. Semoga menang 🍀`, ephemeral: true });
-      } else {
-        const pending = results.filter(r => !r.ok).map(r => '  ❌ ' + taskLabel(r)).join('\n');
-        return i.reply({ content: `⚠️ Task belum lengkap buat **#${g.id} — ${g.title}**:\n${pending}\n\nConnect X di ${BASE_URL}/dashboard lalu coba /join lagi.`, ephemeral: true });
-      }
+      // incomplete → BHARUS selesaikan task via web (butuh connect X). Kasih link tombol.
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setLabel('🍀 Lanjut Join di Web').setStyle(ButtonStyle.Link).setURL(`${BASE_URL}/?giveaway=${id}`)
+      );
+      return i.update({ content: out.message, components: [row], embeds: [] });
     }
   } catch (e) {
     console.error('interaction error:', e);
     await i.reply({ content: 'Terjadi error: ' + e.message, ephemeral: true }).catch(()=>{});
   }
 });
+
+// Auto-verify via Discord + join ketika semua task terpenuhi.
+// Returns {ok:true, message} bila berhasil, atau {ok:false, message} bila task belum lengkap.
+async function processJoin(dcUserId, dcUsername, giveawayId) {
+  const id = parseInt(giveawayId);
+  if (!id) return { ok: false, message: 'ID giveaway tidak valid.' };
+  const g = (await all(`SELECT * FROM giveaways WHERE id=?`, [id]))[0];
+  if (!g) return { ok: false, message: 'Giveaway #' + id + ' tidak ditemukan.' };
+  if (g.status !== 'open') return { ok: false, message: 'Giveaway #' + id + ' sudah ditutup.' };
+  // find or create GiveFuel user for this discord id
+  let u = (await all(`SELECT * FROM users WHERE dc_user_id=?`, [dcUserId]))[0];
+  if (!u) {
+    const r = await run(`INSERT INTO users (dc_user_id, dc_username) VALUES (?,?)`, [dcUserId, dcUsername]);
+    u = { id: r.lastInsertRowid, dc_user_id: dcUserId, dc_username: dcUsername, x_username: null, dc_guilds: '[]' };
+  }
+  // parse tasks
+  let tasks = [];
+  try { tasks = JSON.parse(g.tasks || '[]'); } catch (e) {}
+  if (!tasks.length) {
+    if (g.require_x_follow) tasks.push({ type: 'follow_x', target: g.require_x_follow });
+    if (g.require_x_repost) tasks.push({ type: 'repost_x' });
+    if (g.require_dc_guild) tasks.push({ type: 'join_dc', target: g.require_dc_guild });
+  }
+  const results = [];
+  for (const t of tasks) {
+    if (t.type === 'connect_dc') { results.push({ ...t, ok: true }); continue; }
+    if (t.type === 'join_dc') { results.push({ ...t, ok: true }); continue; } // user IS here in the server
+    if (t.type === 'connect_x') { results.push({ ...t, ok: !!(u.x_username) }); continue; }
+    if (t.type === 'follow_x' || t.type === 'like_x' || t.type === 'repost_x') {
+      results.push({ ...t, ok: !!(u.x_username) }); // honor system
+      continue;
+    }
+    results.push({ ...t, ok: false });
+  }
+  const verified = results.every(r => r.ok);
+  const x_ok = (results.find(r => r.type === 'follow_x') || {}).ok ?? 1;
+  const xr_ok = (results.find(r => r.type === 'repost_x') || {}).ok ?? 1;
+  const dc_ok = (results.find(r => r.type === 'join_dc') || {}).ok ?? 1;
+  await run(`INSERT INTO entries (giveaway_id,user_id,x_follow_ok,x_repost_ok,dc_ok,verified)
+             VALUES (?,?,?,?,?,?)
+             ON CONFLICT(giveaway_id,user_id) DO UPDATE SET
+               x_follow_ok=excluded.x_follow_ok, x_repost_ok=excluded.x_repost_ok,
+               dc_ok=excluded.dc_ok, verified=excluded.verified`,
+    [g.id, u.id, x_ok ? 1 : 0, xr_ok ? 1 : 0, dc_ok ? 1 : 0, verified ? 1 : 0]);
+  if (verified) {
+    return { ok: true, message: `✅ Lo masuk giveaway **#${g.id} — ${g.title}**! Semua task terpenuhi. Semoga menang 🍀` };
+  } else {
+    const pending = results.filter(r => !r.ok).map(r => '  ❌ ' + taskLabel(r)).join('\n');
+    return { ok: false, message: `⚠️ Task belum lengkap buat **#${g.id} — ${g.title}**:\n${pending}\n\nKlik tombol selesaikan di web (ebutuh connect X) atau hubungkan X di ${BASE_URL}/dashboard.` };
+  }
+}
 
 client.login(DISCORD_BOT_TOKEN);
 
@@ -196,9 +216,10 @@ async function announceGiveaway(payload) {
     .setTitle('🎁 ' + (title || 'Giveaway #' + giveawayId))
     .setDescription((projectName ? `**${projectName}**\n` : '') + (hostHandle ? `Host: @${hostHandle}\n` : '') + (prize ? `🏆 Hadiah: **${prize}**\n` : '') + (description ? '\n' + description : ''))
     .setColor(0x4f7cff)
-    .setFooter({ text: 'GiveFuel — klik tombol Join untuk ikut via web' });
+    .setFooter({ text: 'GiveFuel — klik Join utk auto-verify via Discord, atau View utk join via web' });
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setLabel('🎟️ Join Giveaway').setStyle(ButtonStyle.Link).setURL(detailUrl)
+    new ButtonBuilder().setLabel('🎟️ Join Giveaway').setStyle(ButtonStyle.Primary).setCustomId(`join_gw:${giveawayId}`),
+    new ButtonBuilder().setLabel('👀 View Giveaway').setStyle(ButtonStyle.Link).setURL(detailUrl)
   );
   await channel.send({ embeds: [emb], components: [row] });
   return { ok: true };
