@@ -91,8 +91,10 @@
         </div>
       </div>
       <div class="row2">
-        <div><div class="lbl">Ends at (optional)</div><input class="inp" id="g-ends" type="date"></div>
+        <div><div class="lbl">Ends at (optional)</div><input class="inp" id="g-ends" type="datetime-local"></div>
+        <div><div class="lbl">Or auto-end after (hours)</div><input class="inp" id="g-dur" type="number" min="1" value="" placeholder="e.g. 24"></div>
       </div>
+      <div class="chk" style="margin-top:6px">Leave both empty for a manually-ended giveaway. If you set a duration, it ends &amp; auto-draws after that many hours.</div>
       <div class="lbl">Requirements (tasks)</div>
       <div id="g-tasks"></div>
       <button class="btn btn-ghost btn-sm" id="btn-addtask" style="margin-bottom:16px">+ Add task</button>
@@ -176,10 +178,15 @@ $('#btn-create').onclick=async()=>{
     if(type==='connect_x'||type==='connect_dc'){ tasks.push({type}); return; }
     if(!target) return; tasks.push({type,target});
   });
-  const body={title,description:$('#g-desc').value.trim(),prize:$('#g-prize').value.trim(),winners_count:parseInt($('#g-winners').value)||1,ends_at:$('#g-ends').value||null,chain:$('#g-chain').value,tasks};
+  let endsAt = $('#g-ends').value ? new Date($('#g-ends').value).toISOString() : null;
+  const durH = parseInt($('#g-dur').value);
+  if (!endsAt && durH && durH > 0) {
+    endsAt = new Date(Date.now() + durH * 3600 * 1000).toISOString();
+  }
+  const body={title,description:$('#g-desc').value.trim(),prize:$('#g-prize').value.trim(),winners_count:parseInt($('#g-winners').value)||1,ends_at:endsAt,chain:$('#g-chain').value,tasks};
   const r=await api('/api/projects/'+PROJECT_ID+'/giveaways',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(r.error) return toast(r.error);
-  toast('✅ Giveaway created!'); $('#g-title').value='';$('#g-desc').value='';$('#g-prize').value='';$('#g-tasks').innerHTML='';
+  toast('✅ Giveaway created!'); $('#g-title').value='';$('#g-desc').value='';$('#g-prize').value='';$('#g-tasks').innerHTML='';$('#g-dur').value='';
   loadProject();
 };
 

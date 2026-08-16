@@ -323,6 +323,8 @@ const verifyCache = {
 app.get('/api/giveaways/:id', async (req, res) => {
   const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
   if (!g) return res.status(404).json({ error: 'not found' });
+  const newStatus = await autoFinishIfDue(g); // auto-close + auto-draw if past ends_at
+  if (newStatus && newStatus !== g.status) g.status = newStatus;
   const winnerRows = await db.all(`SELECT w.*, u.x_username, u.dc_username FROM winners w JOIN users u ON u.id=w.user_id WHERE w.giveaway_id=?`, [g.id]);
   const c = await db.get('SELECT COUNT(*) c FROM entries WHERE giveaway_id=?', [g.id]);
   const host = (await db.get('SELECT x_username, dc_username FROM users WHERE id=?', [g.created_by])) || {};
@@ -435,6 +437,8 @@ app.post('/api/giveaways/:id/enter', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'login first' });
   const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
   if (!g) return res.status(404).json({ error: 'not found' });
+  const newStatus = await autoFinishIfDue(g); // auto-close + auto-draw if past ends_at
+  if (newStatus && newStatus !== g.status) g.status = newStatus;
   if (g.status !== 'open') return res.status(400).json({ error: 'giveaway closed' });
   const u = await currentUser(req);
 
@@ -464,13 +468,12 @@ app.post('/api/giveaways/:id/enter', async (req, res) => {
   res.json({ entered: true, verified, x_follow_ok, x_repost_ok, dc_ok, tasks: results });
 });
 
-app.post('/api/giveaways/:id/draw', async (req, res) => {
-  const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
-  if (!g) return res.status(404).json({ error: 'not found' });
-  if (g.created_by !== req.session.userId) return res.status(403).json({ error: 'not your giveaway' });
+// Perform a draw on `g` (must already be fetched). Inserts winners, sets status='drawn',
+// notifies Discord. Returns { drawn:false } if no verified entries, else { drawn:true, winners:[ids] }.
+async function performDraw(g) {
   const rows = await db.all('SELECT user_id FROM entries WHERE giveaway_id=? AND verified=1', [g.id]);
   const verified = rows.map(r => r.user_id);
-  if (verified.length === 0) return res.status(400).json({ error: 'no verified entries' });
+  if (verified.length === 0) return { drawn: false, winners: [] };
   const n = Math.min(g.winners_count, verified.length);
   const arr = [...verified];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -492,7 +495,48 @@ app.post('/api/giveaways/:id/draw', async (req, res) => {
       body: JSON.stringify({ giveawayId: g.id, title: g.title, prize: g.prize, winners: winRows }),
     }).catch(e => console.error('[announce] failed:', e.message));
   }
-  res.json({ winners: picked });
+  return { drawn: true, winners: picked };
+}
+
+// If the giveaway is past its scheduled end (ends_at) and still 'open', finish it:
+// close it and auto-draw winners if there are any verified entries. Returns the new status.
+async function autoFinishIfDue(g) {
+  if (!g) return null;
+  if (g.status !== 'open') return g.status;
+  const due = g.ends_at && Date.parse(g.ends_at) && Date.parse(g.ends_at) <= Date.now();
+  if (!due) return g.status;
+  const res = await performDraw(g);
+  if (!res.drawn) {
+    // no verified entries -> just close without drawing
+    await db.run("UPDATE giveaways SET status='closed' WHERE id=?", [g.id]);
+    return 'closed';
+  }
+  return 'drawn';
+}
+
+app.post('/api/giveaways/:id/draw', async (req, res) => {
+  const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
+  if (!g) return res.status(404).json({ error: 'not found' });
+  if (g.created_by !== req.session.userId) return res.status(403).json({ error: 'not your giveaway' });
+  if (g.status === 'drawn') return res.status(400).json({ error: 'already drawn' });
+  const dres = await performDraw(g);
+  if (!dres.drawn) return res.status(400).json({ error: 'no verified entries' });
+  res.json({ winners: dres.winners });
+});
+
+// End a giveaway now (host only): closes it AND auto-draws winners from verified
+// entries. If there are no verified entries it just closes without drawing.
+app.post('/api/giveaways/:id/end', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'login first' });
+  const g = await db.get('SELECT * FROM giveaways WHERE id=?', [req.params.id]);
+  if (!g) return res.status(404).json({ error: 'not found' });
+  if (g.created_by !== req.session.userId) return res.status(403).json({ error: 'not your giveaway' });
+  if (g.status === 'drawn') return res.status(400).json({ error: 'already drawn' });
+  if (g.status === 'closed') return res.status(400).json({ error: 'already closed' });
+  const dres = await performDraw(g);
+  const status = dres.drawn ? 'drawn' : 'closed';
+  if (!dres.drawn) await db.run("UPDATE giveaways SET status='closed' WHERE id=?", [g.id]);
+  res.json({ ok: true, id: g.id, status, winners: dres.winners, autoDrawn: dres.drawn });
 });
 
 app.get('/api/giveaways/:id/export', async (req, res) => {

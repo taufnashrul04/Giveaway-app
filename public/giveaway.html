@@ -279,6 +279,47 @@ async function render(){
     $('#part-count').textContent=parts.length;
     const tb=$('#part-tbody'); tb.innerHTML='';
     parts.forEach((p,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${esc(p.dc_username||'–')}</td><td>${esc(p.x_username||'–')}</td><td style="font-family:monospace;font-size:12px">${esc(p.wallet?p.wallet.slice(0,8)+'…':'–')}</td><td>${p.verified?'✅':'⛔'}</td>`; tb.appendChild(tr); });
+
+    // Host actions: End giveaway (close, no draw) + Draw winners
+    const actArea=$('#action-area');
+    if(g.status==='open'){
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;gap:8px;margin-top:10px;flex-wrap:wrap';
+      row.innerHTML=`
+        <button class="btn btn-primary" id="btn-draw">🎲 Draw winners</button>
+        <button class="btn btn-ghost" id="btn-end" style="border-color:rgba(255,80,80,.35);color:#ff6b6b">⏹ End giveaway</button>`;
+      actArea.appendChild(row);
+      $('#btn-draw').onclick=async()=>{
+        if(!confirm('Draw winners now? This picks '+ (g.winners_count||1) +' winner(s) from verified entries and closes the giveaway.')) return;
+        try{
+          const r=await api('/api/giveaways/'+GWID+'/draw',{method:'POST'});
+          toast('🎉 '+ (r.winners||[]).length +' winner(s) drawn');
+          setTimeout(()=>render(),1500);
+        }catch(e){ toast('⚠️ '+e.message); }
+      };
+      $('#btn-end').onclick=async()=>{
+        if(!confirm('End this giveaway now? It closes to new entries and auto-draws winners from verified entries immediately.')) return;
+        try{
+          const r=await api('/api/giveaways/'+GWID+'/end',{method:'POST'});
+          toast(r.autoDrawn ? ('🎉 Ended — '+ (r.winners||[]).length +' winner(s) drawn') : '⏹ Giveaway ended (no verified entries)');
+          setTimeout(()=>render(),1200);
+        }catch(e){ toast('⚠️ '+e.message); }
+      };
+    } else if(g.status==='closed' && !(g.winners||[]).length){
+      // closed without draw -> offer draw of existing verified entries
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;gap:8px;margin-top:10px';
+      row.innerHTML=`<button class="btn btn-primary" id="btn-draw">🎲 Draw winners</button>`;
+      actArea.appendChild(row);
+      $('#btn-draw').onclick=async()=>{
+        if(!confirm('Draw winners from the '+parts.length+' participant(s) now?')) return;
+        try{
+          const r=await api('/api/giveaways/'+GWID+'/draw',{method:'POST'});
+          toast('🎉 '+ (r.winners||[]).length +' winner(s) drawn');
+          setTimeout(()=>render(),1500);
+        }catch(e){ toast('⚠️ '+e.message); }
+      };
+    }
   }
 }
 
