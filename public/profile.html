@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — GiveFuel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#08090a; --panel:#0f1011; --surface:#191a1b; --surface2:#28282c;
+    --text:#f7f8f8; --text2:#d0d6e0; --text3:#8a8f98; --text4:#62666d;
+    --accent:#5e6ad2; --accent2:#7170ff; --accent3:#828fff;
+    --green:#27a644; --red:#ff6b6b; --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.05);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-feature-settings:'cv01','ss03'; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  .nav { position:sticky; top:0; z-index:50; background:rgba(8,9,10,0.8); backdrop-filter:blur(12px); border-bottom:1px solid var(--border2); }
+  .nav-in { max-width:1100px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px; letter-spacing:-0.3px; color:var(--text); text-decoration:none; }
+  .brand svg { width:22px; height:22px; }
+  .nav-links { display:flex; gap:8px; align-items:center; }
+  .nav-links a { color:var(--text2); text-decoration:none; font-size:13.5px; font-weight:500; padding:7px 12px; border-radius:6px; }
+  .nav-links a.active, .nav-links a:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:none; border-radius:6px; cursor:pointer; font-family:inherit; font-weight:500; text-decoration:none; transition:all .15s; }
+  .btn-primary { background:var(--accent); color:#fff; padding:10px 20px; font-size:14px; }
+  .btn-primary:hover { background:var(--accent3); }
+  .btn-ghost { background:rgba(255,255,255,0.02); color:var(--text2); padding:9px 18px; font-size:14px; border:1px solid var(--border); }
+  .btn-ghost:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+  .btn-ghost.btn-sm { padding:7px 12px; font-size:13px; }
+  .wrap { max-width:760px; margin:0 auto; padding:36px 24px 60px; }
+  .head h1 { font-size:26px; font-weight:600; letter-spacing:-0.5px; }
+  .head .sub { color:var(--text3); font-size:13.5px; margin-top:4px; }
+  .card { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; margin-top:18px; }
+  .h2 { font-size:15px; font-weight:600; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .lbl { display:block; font-size:12px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+  .inp { width:100%; background:#0d0e10; border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:6px; font-size:14px; outline:none; font-family:inherit; }
+  .inp:focus { border-color:var(--accent3); }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-bottom:1px solid var(--border2); }
+  .row:last-child { border-bottom:none; }
+  .row .ico { width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .row .l { font-weight:600; font-size:14px; }
+  .row .s { color:var(--text3); font-size:12.5px; margin-top:2px; }
+  .conn { display:flex; align-items:center; gap:12px; }
+  .tag { font-size:11px; font-weight:600; padding:3px 10px; border-radius:999px; }
+  .tag.ok { background:rgba(39,166,68,0.12); color:var(--green); }
+  .tag.off { background:rgba(255,255,255,0.06); color:var(--text3); }
+  .wallet-row { display:flex; gap:8px; align-items:flex-end; }
+  .wallet-row .inp { flex:1; }
+  .hint { color:var(--text4); font-size:12px; margin-top:8px; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:12px 20px; border-radius:8px; font-size:14px; opacity:0; transition:all .3s; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  @media (max-width:600px){ .wallet-row{flex-direction:column;align-items:stretch} }
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-in">
+  <a class="brand" href="/"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="4" fill="#5e6ad2"/><path d="M8 10h8M8 14h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>GiveFuel</a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/explore.html">Explore</a>
+    <a href="/dashboard.html">Dashboard</a>
+    <a href="/profile.html" class="active">Profile</a>
+    <button id="btn-logout" class="btn btn-ghost btn-sm" style="display:none">Sign out</button>
+    <a href="/auth/dc/login" id="btn-login" class="btn btn-ghost btn-sm">Sign in</a>
+  </div>
+</div></nav>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Profile</h1>
+    <div class="sub" id="userline">Manage your account details.</div>
+  </div>
+
+  <div class="card">
+    <div class="h2">Connected accounts</div>
+    <div class="row">
+      <div class="conn"><div class="ico">🎮</div><div><div class="l">Discord</div><div class="s" id="dc-name">not connected</div></div></div>
+      <a href="/auth/dc/login" class="btn btn-ghost btn-sm" id="dc-act">Connect</a>
+    </div>
+    <div class="row">
+      <div class="conn"><div class="ico">🐦</div><div><div class="l">X (Twitter)</div><div class="s" id="x-name">not connected</div></div></div>
+      <a href="/auth/x/login" class="btn btn-ghost btn-sm" id="x-act">Connect</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h2">Reward wallet</div>
+    <div class="lbl">Chain</div>
+    <select class="inp" id="wallet-chain" style="margin-bottom:10px"><option value="evm">EVM (Ethereum / L2s)</option><option value="sol">Solana</option></select>
+    <div class="lbl">Wallet address</div>
+    <div class="wallet-row">
+      <input class="inp" id="wallet" placeholder="0x… or Solana address" autocomplete="off">
+      <button class="btn btn-primary" id="btn-wallet" style="white-space:nowrap">Save wallet</button>
+    </div>
+    <div class="hint" id="wallet-status">No wallet set yet — add EVM or Solana so we know where to send prizes.</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,2600);}
+async function api(path,opts){const r=await fetch(path,opts);return r.json();}
+
+async function load(){
+  const me = await api('/api/me');
+  if(!me.id){ location.href='/auth/dc/login?redirect='+encodeURIComponent('/profile.html'); return; }
+  $('#btn-login').style.display='none'; $('#btn-logout').style.display='inline-flex';
+  $('#userline').textContent='👤 '+(me.dc_username||me.x_username||'Signed in');
+  // discord
+  if(me.dc_username){ $('#dc-name').textContent=me.dc_username; $('#dc-act').textContent='Connected'; $('#dc-act').style.pointerEvents='none'; $('#dc-act').style.opacity=.5; }
+  // x
+  if(me.x_username){ $('#x-name').textContent='@'+me.x_username; $('#x-act').textContent='Connected'; $('#x-act').style.pointerEvents='none'; $('#x-act').style.opacity=.5; }
+  // wallet
+  if(me.wallet && me.wallet_chain){ $('#wallet').value=me.wallet; $('#wallet-chain').value=me.wallet_chain; $('#wallet-status').textContent='Saved: '+me.wallet.slice(0,10)+'… ('+me.wallet_chain.toUpperCase()+')'; }
+  else $('#wallet-status').textContent='No wallet set yet — add EVM or Solana so we know where to send prizes.';
+}
+
+$('#btn-wallet').onclick=async()=>{
+  const wallet=$('#wallet').value.trim(), chain=$('#wallet-chain').value;
+  const valid = chain==='sol' ? /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet) : /^0x[0-9a-fA-F]{40}$/.test(wallet);
+  if(!valid) return toast(chain==='sol'?'Invalid Solana address':'Invalid EVM address (0x + 40 hex)');
+  const r=await api('/api/me/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet,chain})});
+  if(r.ok){ toast('Wallet saved'); load(); } else toast(r.error||'Failed to save');
+};
+$('#btn-logout').onclick=async()=>{ await fetch('/api/logout',{method:'POST'}); location.href='/'; };
+
+load();
+</script>
+</body>
+</html>
