@@ -153,7 +153,7 @@ async function load(){
   const live=$('#live'); live.innerHTML='';
   const open=(all||[]).filter(g=>g.status==='open');
   if(!open.length) live.innerHTML='<div style="grid-column:1/-1;color:var(--text4);font-size:13px;padding:20px 0">No live giveaways right now — be the first to launch one.</div>';
-  for(const g of open.slice(0,6)){
+  for(const g of open){
     let tasks=[]; try{tasks=JSON.parse(g.tasks||'[]');}catch(e){}
     if(!tasks.length){ if(g.require_x_follow)tasks.push({type:'follow_x',target:g.require_x_follow}); if(g.require_dc_guild)tasks.push({type:'join_dc'}); }
     const labels=tasks.map(taskLabel).slice(0,2);
