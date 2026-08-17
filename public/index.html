@@ -35,39 +35,14 @@
   .hero .hl { color:var(--accent3); }
   .hero p { color:var(--text3); font-size:19px; margin:24px auto 36px; max-width:600px; line-height:1.6; }
   .hero-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-  .section { padding:64px 0; }
-  .section-head { text-align:center; margin-bottom:48px; }
-  .section-head h2 { font-size:38px; font-weight:600; letter-spacing:-0.9px; }
-  .section-head p { color:var(--text3); font-size:16px; margin-top:12px; }
-  .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-  .feat { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:14px; padding:24px; }
-  .feat .ico { font-size:24px; margin-bottom:14px; }
-  .feat h3 { font-size:16px; font-weight:600; margin-bottom:8px; }
-  .feat p { color:var(--text3); font-size:14px; line-height:1.6; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
-  .card { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:10px; transition:border-color .15s; }
-  .card:hover { border-color:rgba(255,255,255,0.16); }
-  .card-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
-  .card h3 { font-size:15.5px; font-weight:600; line-height:1.35; }
-  .card .meta { color:var(--text3); font-size:13px; }
-  .card .prize { color:var(--accent3); font-weight:600; font-size:14.5px; }
-  .proj-tag { background:rgba(255,255,255,0.05); color:var(--text2); padding:3px 10px; border-radius:999px; font-size:12px; font-weight:500; }
-  .chain-tag { display:inline-flex; align-items:center; gap:5px; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; text-transform:uppercase; padding:3px 9px; border-radius:5px; background:rgba(245,245,245,0.06); color:var(--text3); border:1px solid var(--border2); }
-  .cta { text-align:center; padding:80px 0; }
-  .cta h2 { font-size:40px; font-weight:600; letter-spacing:-1px; }
-  .cta p { color:var(--text3); font-size:17px; margin:16px 0 32px; }
-  .footer { border-top:1px solid var(--border2); padding:32px 0; margin-top:48px; color:var(--text4); font-size:13px; text-align:center; }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:12px 20px; border-radius:8px; font-size:14px; opacity:0; transition:all .3s; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
-  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-  @media (max-width:760px){ .hero h1{font-size:38px;letter-spacing:-1px} .feat-grid{grid-template-columns:1fr} .grid{grid-template-columns:1fr} .hero{padding:70px 0 50px} .section-head h2{font-size:28px} }
+  .footer { border-top:1px solid var(--border2); padding:32px 0; color:var(--text4); font-size:13px; text-align:center; }
+  @media (max-width:760px){ .hero h1{font-size:38px;letter-spacing:-1px} .hero{padding:70px 0 50px} }
 </style>
 </head>
 <body>
 <nav class="nav"><div class="nav-in">
   <a class="brand" href="/"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="4" fill="#5e6ad2"/><path d="M8 10h8M8 14h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>GiveFuel</a>
   <div class="nav-links">
-    <a href="#features">Features</a>
-    <a href="/explore.html" id="lnk-explore">Explore</a>
     <a href="/auth/dc/login" class="btn btn-ghost btn-sm" id="btn-login">Sign in</a>
     <a href="/dashboard.html" class="btn btn-primary btn-sm" id="btn-app">Launch app</a>
   </div>
@@ -78,34 +53,14 @@
   <h1>Reward your community.<br><span class="hl">On-chain, genuinely.</span></h1>
   <p>Launch quests, verify X follows and Discord members, draw winners at random, and airdrop prizes to EVM or Solana wallets — no paid API, no lock-in.</p>
   <div class="hero-actions">
-    <a href="/dashboard.html" class="btn btn-primary">Launch the app →</a>
-    <a href="/explore.html" class="btn btn-ghost">Browse live giveaways</a>
+    <a href="/dashboard.html" class="btn btn-primary" style="padding:14px 28px;font-size:15px">Launch the app →</a>
   </div>
-</section>
-
-<section class="section" id="features">
-  <div class="section-head"><h2>Everything you need</h2><p>A complete quest platform, built for Web3 communities.</p></div>
-  <div class="feat-grid">
-    <div class="feat"><div class="ico">✅</div><h3>Real quest verification</h3><p>Verify X follows and reposts, and Discord membership — so only genuine community members win.</p></div>
-    <div class="feat"><div class="ico">🎲</div><h3>Random, fair draws</h3><p>Provably random Fisher–Yates draws from verified entries. No favorites, no bias.</p></div>
-    <div class="feat"><div class="ico">🌐</div><h3>EVM & Solana</h3><p>Collect winners' wallets across EVM and Solana. Airdrop to any chain.</p></div>
-    <div class="feat"><div class="ico">🕹️</div><h3>Built for communities</h3><p>Create projects (DAO, NFT, community), each with its own lineup of giveaways.</p></div>
-    <div class="feat"><div class="ico">📣</div><h3>Auto-post to Discord</h3><p>Every giveaway announces to your Discord automatically with a one-click join button.</p></div>
-    <div class="feat"><div class="ico">💸</div><h3>Free forever</h3><p>Honor-system verification by default. Upgrade to real X checks when you need them.</p></div>
-  </div>
-</section>
-
-<section class="cta">
-  <h2>Ready to launch?</h2>
-  <p>Create your first giveaway in under a minute.</p>
-  <a href="/dashboard.html" class="btn btn-primary" style="padding:14px 28px;font-size:15px">Get started — it's free →</a>
 </section>
 
 <div class="footer">GiveFuel — free Web3 giveaway &amp; quest platform. © 2026</div>
 
 <script>
 const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function api(path){ const r=await fetch(path); return r.json(); }
 async function load(){
   const me = await api('/api/me');
