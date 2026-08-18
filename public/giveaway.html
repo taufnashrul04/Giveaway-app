@@ -155,7 +155,7 @@ function xActionUrl(t){
 }
 
 async function loadMe(){
-  const d = await api('/api/me'); ME=d;
+  const d = (await api('/api/me')) || {}; ME=d;
   const loginBtn=$('#btn-login-header'), dashBtn=$('#nav-dash'), logoutBtn=$('#btn-logout'), profBtn=$('#nav-prof');
   if(d.id){ loginBtn.style.display='none'; dashBtn.style.display='inline-flex'; profBtn.style.display='inline-flex'; logoutBtn.style.display='inline-flex'; $('#userlabel').textContent='👤 '+(d.dc_username||d.x_username||'user'); }
   else { loginBtn.style.display='inline-flex'; dashBtn.style.display='none'; profBtn.style.display='none'; logoutBtn.style.display='none'; }

@@ -104,7 +104,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.style.opacity=1;setTimeo
 async function api(path,opts){const r=await fetch(path,opts);return r.json();}
 
 async function load(){
-  const me = await api('/api/me');
+  const me = (await api('/api/me')) || {};
   if(!me.id){ location.href='/auth/dc/login?redirect='+encodeURIComponent('/profile.html'); return; }
   $('#btn-login').style.display='none'; $('#btn-logout').style.display='inline-flex';
   $('#userline').textContent='👤 '+(me.dc_username||me.x_username||'Signed in');

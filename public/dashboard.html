@@ -138,7 +138,7 @@ function taskLabel(t){
   }
 }
 async function load(){
-  const me = await api('/api/me');
+  const me = (await api('/api/me')) || {};
   if(!me.id){ location.href='/auth/dc/login?redirect='+encodeURIComponent('/dashboard.html'); return; }
   $('#userlabel').textContent='👤 '+(me.dc_username||me.x_username);
 
