@@ -471,7 +471,25 @@ app.post('/api/giveaways/:id/enter', async (req, res) => {
 // Perform a draw on `g` (must already be fetched). Inserts winners, sets status='drawn',
 // notifies Discord. Returns { drawn:false } if no verified entries, else { drawn:true, winners:[ids] }.
 async function performDraw(g) {
-  const rows = await db.all('SELECT user_id FROM entries WHERE giveaway_id=? AND verified=1', [g.id]);
+  // Eligibility = task columns satisfied (ignore the `verified` flag which can be
+  // unreliable). Determine which tasks the giveaway requires (tasks JSON or legacy cols)
+  // and require the matching *_ok column for each.
+  let taskTypes = [];
+  try { taskTypes = JSON.parse(g.tasks || '[]').map(t => t.type); } catch (e) { taskTypes = []; }
+  if (!taskTypes.length) {
+    if (g.require_x_follow) taskTypes.push('follow_x');
+    if (g.require_x_repost) taskTypes.push('repost_x');
+    if (g.require_dc_guild) taskTypes.push('join_dc');
+  }
+  const needFollow = taskTypes.includes('follow_x');
+  const needRepost = taskTypes.includes('repost_x');
+  const needDc     = taskTypes.includes('join_dc');
+  const conds = [];
+  if (needFollow) conds.push('x_follow_ok=1');
+  if (needRepost) conds.push('x_repost_ok=1');
+  if (needDc)     conds.push('dc_ok=1');
+  const where = conds.length ? ('AND ' + conds.join(' AND ')) : '';
+  const rows = await db.all(`SELECT user_id FROM entries WHERE giveaway_id=? ${where}`, [g.id]);
   const verified = rows.map(r => r.user_id);
   if (verified.length === 0) return { drawn: false, winners: [] };
   const n = Math.min(g.winners_count, verified.length);
